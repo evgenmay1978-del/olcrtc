@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,6 +222,35 @@ func TestSocks5HandshakeReadMethodsError(t *testing.T) {
 	_ = client.Close()
 	if err := <-done; err == nil {
 		t.Fatal("socks5Handshake() unexpectedly succeeded")
+	}
+}
+
+func TestValidateSOCKSCredentials(t *testing.T) {
+	tests := []struct {
+		name    string
+		user    string
+		pass    string
+		wantErr bool
+	}{
+		{name: "empty", user: "", pass: "", wantErr: false},
+		{name: "typical", user: "alice", pass: "s3cret", wantErr: false},
+		{name: "max length", user: strings.Repeat("u", 255), pass: strings.Repeat("p", 255), wantErr: false},
+		{name: "user too long", user: strings.Repeat("u", 256), pass: "ok", wantErr: true},
+		{name: "pass too long", user: "ok", pass: strings.Repeat("p", 256), wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateSOCKSCredentials(tt.user, tt.pass)
+			if tt.wantErr {
+				if !errors.Is(err, ErrSOCKSCredTooLong) {
+					t.Fatalf("validateSOCKSCredentials() error = %v, want %v", err, ErrSOCKSCredTooLong)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("validateSOCKSCredentials() error = %v, want nil", err)
+			}
+		})
 	}
 }
 

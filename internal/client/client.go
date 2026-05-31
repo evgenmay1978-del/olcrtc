@@ -126,6 +126,10 @@ func RunWithReady(ctx context.Context, cfg Config, onReady func()) error {
 		return fmt.Errorf("resolve device id: %w", err)
 	}
 
+	if err := validateSOCKSCredentials(cfg.SOCKSUser, cfg.SOCKSPass); err != nil {
+		return err
+	}
+
 	c := &Client{
 		cipher:    cipher,
 		deviceID:  deviceID,
@@ -709,6 +713,21 @@ func (c *Client) socks5Handshake(conn net.Conn) error {
 
 	if _, err := conn.Write([]byte{5, 0}); err != nil {
 		return fmt.Errorf("write socks5 auth: %w", err)
+	}
+	return nil
+}
+
+// maxSOCKSCredLen is the largest username or password a SOCKS5 username/password
+// subnegotiation can carry: RFC 1929 encodes each length in a single byte.
+const maxSOCKSCredLen = 255
+
+// validateSOCKSCredentials rejects configured credentials that no conforming
+// SOCKS5 client could ever send. RFC 1929 caps the username and password at 255
+// bytes each (one length byte), so a longer configured value would make
+// authentication impossible and fail silently at connect time. Fail fast instead.
+func validateSOCKSCredentials(user, pass string) error {
+	if len(user) > maxSOCKSCredLen || len(pass) > maxSOCKSCredLen {
+		return ErrSOCKSCredTooLong
 	}
 	return nil
 }

@@ -3,6 +3,8 @@ package session
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -10,6 +12,39 @@ import (
 	"github.com/openlibrecommunity/olcrtc/internal/control"
 	"github.com/openlibrecommunity/olcrtc/internal/runtime"
 )
+
+func TestBuildAuthHook(t *testing.T) {
+	// Empty path selects open mode: nil hook, no error.
+	hook, err := buildAuthHook("")
+	if err != nil {
+		t.Fatalf("buildAuthHook(\"\") error = %v", err)
+	}
+	if hook != nil {
+		t.Fatal("buildAuthHook(\"\") expected nil hook for open mode")
+	}
+
+	// Missing registry file is an error.
+	if _, err := buildAuthHook(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+		t.Fatal("buildAuthHook(missing) expected error, got nil")
+	}
+
+	// Valid registry yields a working hook that authorizes a known token.
+	path := filepath.Join(t.TempDir(), "clients.json")
+	if err := os.WriteFile(path, []byte(`{"clients":[{"token":"abc","label":"a"}]}`), 0o600); err != nil {
+		t.Fatalf("write registry: %v", err)
+	}
+	hook, err = buildAuthHook(path)
+	if err != nil {
+		t.Fatalf("buildAuthHook(valid) error = %v", err)
+	}
+	if hook == nil {
+		t.Fatal("buildAuthHook(valid) returned nil hook")
+	}
+	sid, err := hook("device", map[string]any{"token": "abc"})
+	if err != nil || sid == "" {
+		t.Fatalf("hook authorize: sid=%q err=%v", sid, err)
+	}
+}
 
 const testBadDuration = "nope"
 

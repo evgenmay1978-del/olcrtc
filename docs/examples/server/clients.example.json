@@ -1,0 +1,7 @@
+{
+  "clients": [
+    { "token": "REPLACE_WITH_64_HEX_CHARS_PER_CLIENT", "label": "alice", "expires": "2026-12-31T23:59:59Z" },
+    { "token": "REPLACE_WITH_ANOTHER_TOKEN", "label": "bob" },
+    { "token": "REPLACE_WITH_REVOKED_TOKEN", "label": "carol", "disabled": true }
+  ]
+}

@@ -49,8 +49,16 @@ type File struct {
 	Gen       Gen       `yaml:"gen"`
 	Profiles  []Profile `yaml:"profiles"`
 	Failover  Failover  `yaml:"failover"`
+	Access    Access    `yaml:"access"`
 	Data      string    `yaml:"data"`
 	Debug     bool      `yaml:"debug"`
+}
+
+// Access configures server-side client authorization. Server mode only.
+type Access struct {
+	// ClientsFile is the path to a JSON client registry (see internal/access).
+	// Empty admits every client (open mode).
+	ClientsFile string `yaml:"clients_file"`
 }
 
 // Profile is a failover entry that overrides top-level runtime fields.
@@ -289,6 +297,7 @@ func Apply(dst session.Config, f File) session.Config {
 	dst.TrafficMinDelay = pickString(dst.TrafficMinDelay, f.Traffic.MinDelay)
 	dst.TrafficMaxDelay = pickString(dst.TrafficMaxDelay, f.Traffic.MaxDelay)
 	dst.Amount = pickInt(dst.Amount, f.Gen.Amount)
+	dst.AccessRegistryPath = pickString(dst.AccessRegistryPath, f.Access.ClientsFile)
 	return dst
 }
 

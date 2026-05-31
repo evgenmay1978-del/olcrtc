@@ -10,8 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/auth"
 	"github.com/openlibrecommunity/olcrtc/internal/client"
+	"github.com/openlibrecommunity/olcrtc/internal/handshake"
 	"github.com/openlibrecommunity/olcrtc/internal/control"
 	enginebuiltin "github.com/openlibrecommunity/olcrtc/internal/engine/builtin"
 	"github.com/openlibrecommunity/olcrtc/internal/logger"
@@ -202,6 +204,10 @@ type Config struct {
 	TrafficMinDelay       string
 	TrafficMaxDelay       string
 	Amount                int
+	// AccessRegistryPath, when set on the server, points at a JSON client
+	// registry that authorizes incoming clients by token (see internal/access).
+	// Empty means admit every client (the default open behaviour).
+	AccessRegistryPath string
 }
 
 // RegisterDefaults registers built-in carriers and transports.
@@ -635,6 +641,21 @@ func configureDefaultResolver(dnsServer string) {
 	}
 }
 
+// buildAuthHook returns the server authorization hook. With an empty path the
+// hook is nil, which makes the server admit every client (open mode). With a
+// path it loads a token-based client registry that authorizes by subscription.
+func buildAuthHook(registryPath string) (handshake.AuthFunc, error) {
+	if registryPath == "" {
+		return nil, nil //nolint:nilnil // nil hook intentionally selects open mode
+	}
+	reg, err := access.New(registryPath)
+	if err != nil {
+		return nil, fmt.Errorf("load access registry: %w", err)
+	}
+	logger.Infof("access control enabled: client registry %s", registryPath)
+	return reg.Authorize, nil
+}
+
 func runOnce(
 	ctx context.Context,
 	cfg Config,
@@ -645,6 +666,10 @@ func runOnce(
 	opts := buildTransportOptions(cfg)
 	switch cfg.Mode {
 	case modeSRV:
+		authHook, err := buildAuthHook(cfg.AccessRegistryPath)
+		if err != nil {
+			return err
+		}
 		if err := server.Run(ctx, server.Config{
 			Transport:        cfg.Transport,
 			Carrier:          cfg.Auth,
@@ -662,6 +687,7 @@ func runOnce(
 			Token:            cfg.Token,
 			Liveness:         liveness,
 			Traffic:          traffic,
+			AuthHook:         authHook,
 			OnSessionOpen: func(sessionID, deviceID string, claims map[string]any) {
 				logger.Infof("session opened: id=%s device=%s claims=%v", sessionID, deviceID, claims)
 			},

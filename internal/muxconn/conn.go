@@ -17,6 +17,7 @@
 package muxconn
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -32,6 +33,15 @@ import (
 
 // ErrClosed is returned from Read/Write after the conn has been closed.
 var ErrClosed = errors.New("muxconn: closed")
+
+// Frame type bytes, prepended to the plaintext before AEAD encryption when
+// framing is enabled. Because the type lives inside the ciphertext it is
+// invisible to an on-path observer; padding frames are indistinguishable from
+// real ones by size or content.
+const (
+	frameReal byte = 0x00 // carries real tunnel data
+	framePad  byte = 0x01 // cover traffic, dropped by the receiver
+)
 
 const (
 	// inboundQueue is the buffered capacity of the Push -> Read pipeline.
@@ -107,6 +117,17 @@ type Conn struct {
 	// pool and clear both fields. Touched only by Read.
 	leftoverBuf *[]byte
 	leftover    []byte
+
+	// framed enables one-byte frame typing (real vs padding) inside the
+	// AEAD. It must be set identically on both peers before the conn is
+	// used; when false the wire format is byte-for-byte the legacy format.
+	framed bool
+	// sendMu serializes link sends so the cover-traffic pacer and Write
+	// never interleave encrypted frames on the wire. Only used when framed.
+	sendMu sync.Mutex
+	// lastSendNanos is the UnixNano of the last real (non-padding) send,
+	// used by the cover pacer to stay quiet while real data is flowing.
+	lastSendNanos atomic.Int64
 }
 
 // New wires a Conn over the given transport. Push must be set as the
@@ -148,6 +169,14 @@ func (c *Conn) Push(ciphertext []byte) {
 		releaseFrameBuf(bufPtr)
 		logger.Debugf("muxconn: decrypt failed, dropping frame: %v", err)
 		return
+	}
+	if c.framed {
+		stripped, deliver := stripFrameType(pt)
+		if !deliver {
+			releaseFrameBuf(bufPtr) // padding or malformed: never reaches Read
+			return
+		}
+		pt = stripped
 	}
 	*bufPtr = pt
 	if c.closed.Load() {
@@ -263,6 +292,14 @@ func (c *Conn) Write(p []byte) (int, error) {
 		time.Sleep(slowPollDelay)
 	}
 
+	if c.framed {
+		if err := c.sendFrame(frameReal, p); err != nil {
+			return 0, err
+		}
+		c.lastSendNanos.Store(time.Now().UnixNano())
+		return len(p), nil
+	}
+
 	enc, err := c.cipher.Encrypt(p)
 	if err != nil {
 		return 0, fmt.Errorf("encrypt: %w", err)
@@ -280,4 +317,88 @@ func (c *Conn) Close() error {
 		close(c.closeCh)
 	})
 	return nil
+}
+
+// EnableFraming turns on one-byte frame typing. It must be called on both
+// peers, before the conn carries traffic, otherwise the receiver will
+// misinterpret the wire format. With framing off the conn is byte-for-byte
+// compatible with the legacy format.
+func (c *Conn) EnableFraming() { c.framed = true }
+
+// stripFrameType reads the leading type byte from a decrypted frame and
+// returns the remaining payload together with whether it should reach Read.
+// Padding and malformed frames return deliver=false. The payload is shifted
+// left in place so the pooled buffer keeps its zero offset (and full capacity).
+func stripFrameType(pt []byte) (payload []byte, deliver bool) {
+	if len(pt) == 0 {
+		return nil, false
+	}
+	typ := pt[0]
+	n := copy(pt, pt[1:]) // left-shift; copy handles the overlap (memmove)
+	pt = pt[:n]
+	if typ != frameReal {
+		return nil, false // framePad or unknown: drop
+	}
+	return pt, true
+}
+
+// sendFrame encrypts typ||p and writes it to the link as one message. The
+// send is serialized so the cover pacer and Write never interleave on the wire.
+func (c *Conn) sendFrame(typ byte, p []byte) error {
+	buf := make([]byte, 1+len(p))
+	buf[0] = typ
+	copy(buf[1:], p)
+	enc, err := c.cipher.Encrypt(buf)
+	if err != nil {
+		return fmt.Errorf("encrypt: %w", err)
+	}
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	if err := c.send(enc); err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+	return nil
+}
+
+// StartCover launches a background pacer that emits padding frames whenever the
+// link has been idle for at least interval, so the traffic envelope stays
+// "always on" like a real video call instead of going silent between bursts.
+// It is a no-op unless framing is enabled and interval > 0. The pacer stops
+// when ctx is cancelled or the conn is closed.
+func (c *Conn) StartCover(ctx context.Context, interval time.Duration, size int) {
+	if !c.framed || interval <= 0 {
+		return
+	}
+	if size <= 0 {
+		size = 1
+	}
+	go c.coverLoop(ctx, interval, size)
+}
+
+func (c *Conn) coverLoop(ctx context.Context, interval time.Duration, size int) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-c.closeCh:
+			return
+		case <-ticker.C:
+			if c.closed.Load() {
+				return
+			}
+			// Stay quiet while real data is flowing: only pad genuine gaps.
+			idle := time.Since(time.Unix(0, c.lastSendNanos.Load()))
+			if idle < interval || !c.ln.CanSend() {
+				continue
+			}
+			// Zero payload is fine: the AEAD makes every ciphertext look
+			// random regardless of plaintext, so padding is indistinguishable.
+			pad := make([]byte, size)
+			if err := c.sendFrame(framePad, pad); err != nil {
+				logger.Debugf("muxconn: cover send failed: %v", err)
+			}
+		}
+	}
 }

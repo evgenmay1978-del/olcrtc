@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+const (
+	tokenValid   = "valid"
+	tokenExpired = "expired"
+	tokenRevoked = "revoked"
+)
+
 func writeRegistry(t *testing.T, clients []Client) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -40,10 +46,10 @@ func TestAuthorize(t *testing.T) {
 	future := time.Now().Add(time.Hour)
 	past := time.Now().Add(-time.Hour)
 	path := writeRegistry(t, []Client{
-		{Token: "valid", Label: "alice", Expires: future},
+		{Token: tokenValid, Label: "alice", Expires: future},
 		{Token: "forever", Label: "bob"},
-		{Token: "expired", Label: "carol", Expires: past},
-		{Token: "revoked", Label: "dave", Disabled: true},
+		{Token: tokenExpired, Label: "carol", Expires: past},
+		{Token: tokenRevoked, Label: "dave", Disabled: true},
 	})
 	r, err := New(path)
 	if err != nil {
@@ -55,14 +61,14 @@ func TestAuthorize(t *testing.T) {
 		claims  map[string]any
 		wantErr error
 	}{
-		{name: "valid", claims: map[string]any{"token": "valid"}, wantErr: nil},
-		{name: "never expires", claims: map[string]any{"token": "forever"}, wantErr: nil},
-		{name: "expired", claims: map[string]any{"token": "expired"}, wantErr: ErrAccessExpired},
-		{name: "revoked", claims: map[string]any{"token": "revoked"}, wantErr: ErrAccessRevoked},
-		{name: "unknown", claims: map[string]any{"token": "nope"}, wantErr: ErrAccessDenied},
+		{name: "valid", claims: map[string]any{claimToken: tokenValid}, wantErr: nil},
+		{name: "never expires", claims: map[string]any{claimToken: "forever"}, wantErr: nil},
+		{name: "expired", claims: map[string]any{claimToken: tokenExpired}, wantErr: ErrAccessExpired},
+		{name: "revoked", claims: map[string]any{claimToken: tokenRevoked}, wantErr: ErrAccessRevoked},
+		{name: "unknown", claims: map[string]any{claimToken: "nope"}, wantErr: ErrAccessDenied},
 		{name: "no token", claims: map[string]any{}, wantErr: ErrNoToken},
-		{name: "empty token", claims: map[string]any{"token": ""}, wantErr: ErrNoToken},
-		{name: "wrong type", claims: map[string]any{"token": 123}, wantErr: ErrNoToken},
+		{name: "empty token", claims: map[string]any{claimToken: ""}, wantErr: ErrNoToken},
+		{name: "wrong type", claims: map[string]any{claimToken: 123}, wantErr: ErrNoToken},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -91,7 +97,7 @@ func TestAuthorizeSessionIDsAreUnique(t *testing.T) {
 	}
 	seen := make(map[string]bool)
 	for range 100 {
-		sid, err := r.Authorize("d", map[string]any{"token": "t"})
+		sid, err := r.Authorize("d", map[string]any{claimToken: "t"})
 		if err != nil {
 			t.Fatalf("Authorize() error = %v", err)
 		}
@@ -108,13 +114,16 @@ func TestHotReloadRevoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	if _, err := r.Authorize("d", map[string]any{"token": "t"}); err != nil {
+	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); err != nil {
 		t.Fatalf("Authorize() before revoke error = %v", err)
 	}
 
 	// Rewrite the file with the client disabled, advancing mtime so the
 	// registry notices the change.
-	data, _ := json.Marshal(file{Clients: []Client{{Token: "t", Label: "a", Disabled: true}}})
+	data, err := json.Marshal(file{Clients: []Client{{Token: "t", Label: "a", Disabled: true}}})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatalf("rewrite: %v", err)
 	}
@@ -123,7 +132,7 @@ func TestHotReloadRevoke(t *testing.T) {
 		t.Fatalf("chtimes: %v", err)
 	}
 
-	if _, err := r.Authorize("d", map[string]any{"token": "t"}); !errors.Is(err, ErrAccessRevoked) {
+	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); !errors.Is(err, ErrAccessRevoked) {
 		t.Fatalf("Authorize() after revoke error = %v, want ErrAccessRevoked", err)
 	}
 }
@@ -137,11 +146,11 @@ func TestExpiryUsesInjectedClock(t *testing.T) {
 	}
 
 	r.now = func() time.Time { return at } // before expiry
-	if _, err := r.Authorize("d", map[string]any{"token": "t"}); err != nil {
+	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); err != nil {
 		t.Fatalf("Authorize() before expiry error = %v", err)
 	}
 	r.now = func() time.Time { return at.Add(2 * time.Minute) } // after expiry
-	if _, err := r.Authorize("d", map[string]any{"token": "t"}); !errors.Is(err, ErrAccessExpired) {
+	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); !errors.Is(err, ErrAccessExpired) {
 		t.Fatalf("Authorize() after expiry error = %v, want ErrAccessExpired", err)
 	}
 }

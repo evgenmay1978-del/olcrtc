@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: ["main", "master"]
   pull_request:
     branches: ["main", "master"]
   schedule:
@@ -61,6 +62,10 @@ jobs:
 
   real-e2e:
     name: Real E2E (Providers x Transports)
+    # Hits live providers (Jitsi/Telemost/WbStream). Keep off per-PR/per-push
+    # runs to avoid flakiness and burning provider quota; run on schedule or
+    # manual dispatch only.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -115,6 +120,24 @@ jobs:
             -olcrtc.stress-duration=120s \
             -olcrtc.stress-echo-size=1024 \
             -olcrtc.stress-case-timeout=8m
+
+  govulncheck:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          $(go env GOPATH)/bin/govulncheck ./...
 
   lint:
     name: Lint

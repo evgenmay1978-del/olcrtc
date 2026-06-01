@@ -1,0 +1,86 @@
+package main
+
+import (
+	"bytes"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+const flagRegistry = "-registry"
+
+func writeFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func TestRunGrantRequestApproveReject(t *testing.T) {
+	reg := filepath.Join(t.TempDir(), "clients.json")
+
+	var out bytes.Buffer
+	mustRun := func(args ...string) {
+		t.Helper()
+		out.Reset()
+		full := append([]string{flagRegistry, reg}, args...)
+		if err := run(full, &out); err != nil {
+			t.Fatalf("run %v: %v", args, err)
+		}
+	}
+
+	mustRun("grant", "alice", "720h", "free")
+	if !strings.Contains(out.String(), "granted active access") {
+		t.Fatalf("grant output = %q", out.String())
+	}
+
+	mustRun("request", "bob", "sber-6564")
+	if !strings.Contains(out.String(), "pending") {
+		t.Fatalf("request output = %q", out.String())
+	}
+
+	mustRun("list")
+	listing := out.String()
+	if !strings.Contains(listing, "alice") || !strings.Contains(listing, "bob") {
+		t.Fatalf("list missing clients: %q", listing)
+	}
+
+	mustRun("approve", "bob", "720h")
+	mustRun("reject", "alice")
+	mustRun("list")
+	if !strings.Contains(out.String(), "rejected") {
+		t.Fatalf("expected alice rejected: %q", out.String())
+	}
+}
+
+func TestRunUsageErrors(t *testing.T) {
+	var out bytes.Buffer
+	if err := run(nil, &out); !errors.Is(err, errUsage) {
+		t.Fatalf("run(nil) = %v, want errUsage", err)
+	}
+	// A registry command with no label is rejected.
+	reg := filepath.Join(t.TempDir(), "c.json")
+	if err := run([]string{flagRegistry, reg, "grant"}, &out); !errors.Is(err, errMissingLabel) {
+		t.Fatalf("grant without label = %v, want errMissingLabel", err)
+	}
+}
+
+func TestRunPayNeedsNoRegistry(t *testing.T) {
+	var out bytes.Buffer
+	// pay without -pay-info is a specific error, not the generic usage error.
+	if err := run([]string{cmdPay}, &out); !errors.Is(err, errNoPayInfo) {
+		t.Fatalf("pay without info = %v, want errNoPayInfo", err)
+	}
+
+	info := filepath.Join(t.TempDir(), "pay.txt")
+	writeFile(t, info, "Pay to +7...6564\n")
+	out.Reset()
+	if err := run([]string{"-pay-info", info, cmdPay}, &out); err != nil {
+		t.Fatalf("pay: %v", err)
+	}
+	if !strings.Contains(out.String(), "6564") {
+		t.Fatalf("pay output = %q", out.String())
+	}
+}

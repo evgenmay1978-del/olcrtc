@@ -26,6 +26,17 @@ const claimToken = "token"
 // tokenBytes is the number of random bytes in a generated token (256-bit).
 const tokenBytes = 32
 
+// Subscription lifecycle statuses. An empty status is treated as StatusActive
+// for backward compatibility with registries written before this field existed.
+const (
+	// StatusPending means the client claims to have paid; awaiting admin review.
+	StatusPending = "pending"
+	// StatusActive means access is granted (paid-and-approved, or free grant).
+	StatusActive = "active"
+	// StatusRejected means the admin declined the payment; no access.
+	StatusRejected = "rejected"
+)
+
 var (
 	// ErrAccessDenied is returned when no client matches the presented token.
 	// The message is deliberately generic so it can be forwarded to the client
@@ -35,6 +46,8 @@ var (
 	ErrAccessExpired = errors.New("access expired")
 	// ErrAccessRevoked is returned when a matching client has been disabled.
 	ErrAccessRevoked = errors.New("access revoked")
+	// ErrAccessPending is returned when a matching client has not been approved yet.
+	ErrAccessPending = errors.New("access pending payment approval")
 	// ErrNoToken is returned when the client presented no token in its claims.
 	ErrNoToken = errors.New("no access token presented")
 	// ErrEmptyToken is returned when a registry entry has an empty token.
@@ -47,10 +60,22 @@ type Client struct {
 	Token string `json:"token"`
 	// Label is a human-readable name for the client (e.g. who bought access).
 	Label string `json:"label,omitempty"`
+	// Status is the subscription lifecycle state (pending/active/rejected).
+	// Empty is treated as active for backward compatibility.
+	Status string `json:"status,omitempty"`
 	// Expires is the subscription end time. The zero value means "never expires".
 	Expires time.Time `json:"expires,omitempty"`
-	// Disabled, when true, revokes the client regardless of expiry.
+	// Disabled, when true, revokes the client regardless of status or expiry.
 	Disabled bool `json:"disabled,omitempty"`
+	// Contact is an optional free-form note (e.g. phone last digits the client
+	// paid from) to help the admin match a payment to this client.
+	Contact string `json:"contact,omitempty"`
+}
+
+// isActive reports whether the client should currently be admitted. An empty
+// status counts as active so legacy registries keep working.
+func (c *Client) isActive() bool {
+	return c.Status == "" || c.Status == StatusActive
 }
 
 // file is the on-disk registry schema.
@@ -151,14 +176,27 @@ func (r *Registry) Authorize(deviceID string, claims map[string]any) (string, er
 	if matched == nil {
 		return "", ErrAccessDenied
 	}
-	if matched.Disabled {
-		return "", ErrAccessRevoked
+	if err := r.checkAdmissible(matched); err != nil {
+		return "", err
 	}
-	if !matched.Expires.IsZero() && r.now().After(matched.Expires) {
-		return "", ErrAccessExpired
-	}
-
 	return newSessionID()
+}
+
+// checkAdmissible returns nil if the matched client may currently be admitted,
+// or the reason it must be rejected (revoked, pending, expired, or inactive).
+func (r *Registry) checkAdmissible(c *Client) error {
+	switch {
+	case c.Disabled:
+		return ErrAccessRevoked
+	case c.Status == StatusPending:
+		return ErrAccessPending
+	case !c.isActive():
+		return ErrAccessDenied
+	case !c.Expires.IsZero() && r.now().After(c.Expires):
+		return ErrAccessExpired
+	default:
+		return nil
+	}
 }
 
 // newSessionID returns a random 128-bit hex session identifier.

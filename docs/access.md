@@ -65,14 +65,69 @@ access:
 
 | Ситуация | Результат |
 |---|---|
-| токен совпал, не истёк, не отозван | доступ разрешён, выдаётся session ID |
+| токен совпал, активен, не истёк, не отозван | доступ разрешён, выдаётся session ID |
 | токен не найден | `access denied` |
+| статус `pending` (ждёт подтверждения оплаты) | `access pending payment approval` |
+| статус `rejected` (оплата отклонена) | `access denied` |
 | подписка истекла (`expires`) | `access expired` |
 | клиент отключён (`disabled`) | `access revoked` |
 | токен не предъявлен | `no access token presented` |
 
-## Выпуск нового клиента
+Поле `status` необязательно: пустое значение трактуется как `active`, поэтому
+старые реестры продолжают работать.
+
+## Управление через `olcrtc-admin`
+
+Вместо ручной правки `clients.json` есть отдельный CLI. Сборка: `mage admin`
+(бинарь `olcrtc-admin`). Он редактирует тот же файл, что читает сервер, поэтому
+изменения применяются **без перезапуска**.
+
+```bash
+# Бесплатная выдача доступа (сразу активен), на 30 дней:
+olcrtc-admin -registry clients.json grant alice 720h "друг, бесплатно"
+
+# Бессрочно (без срока):
+olcrtc-admin -registry clients.json grant alice
+
+# Платный самозапрос: создаётся клиент в статусе pending (доступа ещё нет):
+olcrtc-admin -registry clients.json request bob "оплата с ...6564"
+
+# Список всех клиентов и их статусов (с токенами):
+olcrtc-admin -registry clients.json list
+
+# Подтвердить оплату -> активировать на 30 дней:
+olcrtc-admin -registry clients.json approve bob 720h
+
+# Отклонить (оплата не пришла):
+olcrtc-admin -registry clients.json reject bob
+
+# Отозвать / вернуть / удалить:
+olcrtc-admin -registry clients.json revoke alice
+olcrtc-admin -registry clients.json enable alice
+olcrtc-admin -registry clients.json remove alice
+```
+
+`grant` выдаёт доступ бесплатно (нужным людям), `request` + `approve`/`reject` —
+платная схема с ручным подтверждением.
+
+## Оплата (перевод по номеру телефона)
+
+Поток предельно простой и не требует платёжного шлюза:
+
+1. Клиент видит реквизиты: `olcrtc-admin -pay-info pay-info.txt pay`
+   (печатает ваш текст с номером и инструкцией).
+2. Клиент переводит по номеру телефона (Тинькофф/Сбер) и присылает вам скрин.
+3. Вы сверяете перевод и **вручную** подтверждаете или отклоняете:
+   `approve <label>` либо `reject <label>`.
+
+> **Важно про приватность.** Ваш номер телефона и реквизиты — личные данные, их
+> нельзя коммитить в git. Поэтому они лежат в **отдельном файле** (`pay-info.txt`),
+> который добавлен в `.gitignore`. Шаблон: `docs/examples/server/pay-info.example.txt` —
+> скопируйте его в `pay-info.txt`, впишите свой номер, и команда `pay` будет его
+> показывать. Файлы `clients.json` и `pay-info.txt` намеренно игнорируются git.
+
+## Прямой выпуск (без admin-CLI)
 
 1. Сгенерируйте токен: `openssl rand -hex 32` (или `access.GenerateToken()` в Go).
-2. Добавьте запись в `clients.json` с нужным `expires`.
+2. Добавьте запись в `clients.json` с нужным `status`/`expires`.
 3. Передайте токен клиенту — он сразу действует, без перезапуска сервера.

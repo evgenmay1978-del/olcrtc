@@ -254,3 +254,9 @@ cpu.prof
 .kirograph
 package.json
 package-lock.json
+
+# Admin runtime data — never commit: holds client tokens and personal
+# payment details (phone/bank). Keep these local to the server only.
+clients.json
+pay-info.txt
+*.pay-info.txt

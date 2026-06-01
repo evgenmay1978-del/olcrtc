@@ -104,6 +104,12 @@ func Build() error {
 	return buildBinary("olcrtc", "./cmd/olcrtc", goos, goarch)
 }
 
+// Admin builds the olcrtc-admin client-access management CLI for the host.
+func Admin() error {
+	mg.Deps(Deps)
+	return buildBinary("olcrtc-admin", "./cmd/olcrtc-admin", goos, goarch)
+}
+
 // Cross builds olcrtc for all supported platforms.
 func Cross() error {
 	mg.Deps(Deps)

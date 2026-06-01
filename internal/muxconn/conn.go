@@ -325,11 +325,34 @@ func (c *Conn) Close() error {
 // compatible with the legacy format.
 func (c *Conn) EnableFraming() { c.framed = true }
 
+// CoverConfig controls cover-traffic obfuscation. The zero value (Enabled
+// false) leaves the conn in the legacy, byte-for-byte-compatible mode.
+type CoverConfig struct {
+	// Enabled turns on frame typing on this conn. Both peers must agree.
+	Enabled bool
+	// Interval is the idle gap after which a padding frame is emitted. Zero
+	// enables framing without an active pacer (padding only rides along).
+	Interval time.Duration
+	// Size is the padding payload size in bytes.
+	Size int
+}
+
+// ApplyCover enables framing and, if configured, starts the idle cover pacer.
+// It is the single entry point used to wire obfuscation onto a freshly built
+// conn from both the client and server sides, keeping the two ends symmetric.
+func (c *Conn) ApplyCover(ctx context.Context, cfg CoverConfig) {
+	if !cfg.Enabled {
+		return
+	}
+	c.EnableFraming()
+	c.StartCover(ctx, cfg.Interval, cfg.Size)
+}
+
 // stripFrameType reads the leading type byte from a decrypted frame and
 // returns the remaining payload together with whether it should reach Read.
 // Padding and malformed frames return deliver=false. The payload is shifted
 // left in place so the pooled buffer keeps its zero offset (and full capacity).
-func stripFrameType(pt []byte) (payload []byte, deliver bool) {
+func stripFrameType(pt []byte) ([]byte, bool) {
 	if len(pt) == 0 {
 		return nil, false
 	}

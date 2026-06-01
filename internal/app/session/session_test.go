@@ -48,6 +48,16 @@ func TestBuildAuthHook(t *testing.T) {
 
 const testBadDuration = "nope"
 
+func TestAccessClaims(t *testing.T) {
+	if got := accessClaims(""); got != nil {
+		t.Fatalf("accessClaims(\"\") = %v, want nil", got)
+	}
+	got := accessClaims("secret-token")
+	if got["token"] != "secret-token" {
+		t.Fatalf("accessClaims token = %v, want secret-token", got["token"])
+	}
+}
+
 func TestCoverConfig(t *testing.T) {
 	// Disabled: always returns the zero (off) config regardless of other fields.
 	got, err := coverConfig(Config{CoverEnabled: false, CoverInterval: testBadDuration})

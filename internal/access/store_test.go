@@ -29,7 +29,7 @@ func TestStoreAddSaveReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	if _, err := r.Authorize("d", map[string]any{claimToken: token}); err != nil {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: token}); err != nil {
 		t.Fatalf("Authorize active client: %v", err)
 	}
 }
@@ -57,7 +57,7 @@ func TestStorePendingApproveRejectFlow(t *testing.T) {
 
 	// Pending must NOT be admitted.
 	r, _ := New(path)
-	if _, err := r.Authorize("d", map[string]any{claimToken: token}); !errors.Is(err, ErrAccessPending) {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: token}); !errors.Is(err, ErrAccessPending) {
 		t.Fatalf("pending Authorize error = %v, want ErrAccessPending", err)
 	}
 
@@ -70,7 +70,7 @@ func TestStorePendingApproveRejectFlow(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 	r2, _ := New(path)
-	if _, err := r2.Authorize("d", map[string]any{claimToken: token}); err != nil {
+	if _, err := r2.Authorize("d", map[string]any{ClaimToken: token}); err != nil {
 		t.Fatalf("approved Authorize: %v", err)
 	}
 
@@ -83,7 +83,7 @@ func TestStorePendingApproveRejectFlow(t *testing.T) {
 		t.Fatalf("Save: %v", err)
 	}
 	r3, _ := New(path)
-	if _, err := r3.Authorize("d", map[string]any{claimToken: token}); !errors.Is(err, ErrAccessDenied) {
+	if _, err := r3.Authorize("d", map[string]any{ClaimToken: token}); !errors.Is(err, ErrAccessDenied) {
 		t.Fatalf("rejected Authorize error = %v, want ErrAccessDenied", err)
 	}
 }
@@ -97,7 +97,7 @@ func TestStoreRemoveAndDisable(t *testing.T) {
 	}
 	_ = s.Save()
 	r, _ := New(path)
-	if _, err := r.Authorize("d", map[string]any{claimToken: tok}); !errors.Is(err, ErrAccessRevoked) {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: tok}); !errors.Is(err, ErrAccessRevoked) {
 		t.Fatalf("disabled Authorize error = %v, want ErrAccessRevoked", err)
 	}
 

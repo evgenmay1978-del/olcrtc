@@ -61,14 +61,14 @@ func TestAuthorize(t *testing.T) {
 		claims  map[string]any
 		wantErr error
 	}{
-		{name: "valid", claims: map[string]any{claimToken: tokenValid}, wantErr: nil},
-		{name: "never expires", claims: map[string]any{claimToken: "forever"}, wantErr: nil},
-		{name: "expired", claims: map[string]any{claimToken: tokenExpired}, wantErr: ErrAccessExpired},
-		{name: "revoked", claims: map[string]any{claimToken: tokenRevoked}, wantErr: ErrAccessRevoked},
-		{name: "unknown", claims: map[string]any{claimToken: "nope"}, wantErr: ErrAccessDenied},
+		{name: "valid", claims: map[string]any{ClaimToken: tokenValid}, wantErr: nil},
+		{name: "never expires", claims: map[string]any{ClaimToken: "forever"}, wantErr: nil},
+		{name: "expired", claims: map[string]any{ClaimToken: tokenExpired}, wantErr: ErrAccessExpired},
+		{name: "revoked", claims: map[string]any{ClaimToken: tokenRevoked}, wantErr: ErrAccessRevoked},
+		{name: "unknown", claims: map[string]any{ClaimToken: "nope"}, wantErr: ErrAccessDenied},
 		{name: "no token", claims: map[string]any{}, wantErr: ErrNoToken},
-		{name: "empty token", claims: map[string]any{claimToken: ""}, wantErr: ErrNoToken},
-		{name: "wrong type", claims: map[string]any{claimToken: 123}, wantErr: ErrNoToken},
+		{name: "empty token", claims: map[string]any{ClaimToken: ""}, wantErr: ErrNoToken},
+		{name: "wrong type", claims: map[string]any{ClaimToken: 123}, wantErr: ErrNoToken},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestAuthorizeSessionIDsAreUnique(t *testing.T) {
 	}
 	seen := make(map[string]bool)
 	for range 100 {
-		sid, err := r.Authorize("d", map[string]any{claimToken: "t"})
+		sid, err := r.Authorize("d", map[string]any{ClaimToken: "t"})
 		if err != nil {
 			t.Fatalf("Authorize() error = %v", err)
 		}
@@ -114,7 +114,7 @@ func TestHotReloadRevoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); err != nil {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: "t"}); err != nil {
 		t.Fatalf("Authorize() before revoke error = %v", err)
 	}
 
@@ -132,7 +132,7 @@ func TestHotReloadRevoke(t *testing.T) {
 		t.Fatalf("chtimes: %v", err)
 	}
 
-	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); !errors.Is(err, ErrAccessRevoked) {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: "t"}); !errors.Is(err, ErrAccessRevoked) {
 		t.Fatalf("Authorize() after revoke error = %v, want ErrAccessRevoked", err)
 	}
 }
@@ -146,11 +146,11 @@ func TestExpiryUsesInjectedClock(t *testing.T) {
 	}
 
 	r.now = func() time.Time { return at } // before expiry
-	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); err != nil {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: "t"}); err != nil {
 		t.Fatalf("Authorize() before expiry error = %v", err)
 	}
 	r.now = func() time.Time { return at.Add(2 * time.Minute) } // after expiry
-	if _, err := r.Authorize("d", map[string]any{claimToken: "t"}); !errors.Is(err, ErrAccessExpired) {
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: "t"}); !errors.Is(err, ErrAccessExpired) {
 		t.Fatalf("Authorize() after expiry error = %v, want ErrAccessExpired", err)
 	}
 }

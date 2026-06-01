@@ -214,6 +214,9 @@ type Config struct {
 	// registry that authorizes incoming clients by token (see internal/access).
 	// Empty means admit every client (the default open behaviour).
 	AccessRegistryPath string
+	// AccessToken, when set on the client, is sent to the server in the
+	// handshake claims under "token" so a token-gated server can authorize it.
+	AccessToken string
 	// Cover configures cover-traffic obfuscation. Disabled by default; must be
 	// set identically on client and server.
 	CoverEnabled  bool
@@ -592,6 +595,16 @@ func trafficConfig(cfg Config) (transport.TrafficConfig, error) {
 	}, nil
 }
 
+// accessClaims builds the handshake claims for the client. When an access
+// token is configured it is sent under access.ClaimToken so a token-gated
+// server can authorize this client; otherwise no claims are sent.
+func accessClaims(token string) map[string]any {
+	if token == "" {
+		return nil
+	}
+	return map[string]any{access.ClaimToken: token}
+}
+
 func coverConfig(cfg Config) (muxconn.CoverConfig, error) {
 	if !cfg.CoverEnabled {
 		return muxconn.CoverConfig{}, nil
@@ -757,6 +770,7 @@ func runOnce(
 			Liveness:         liveness,
 			Traffic:          traffic,
 			Cover:            cover,
+			Claims:           accessClaims(cfg.AccessToken),
 		}); err != nil {
 			return fmt.Errorf("client: %w", err)
 		}

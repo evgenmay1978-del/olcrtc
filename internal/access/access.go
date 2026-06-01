@@ -20,8 +20,9 @@ import (
 	"time"
 )
 
-// claimToken is the claims key a client uses to present its access token.
-const claimToken = "token"
+// ClaimToken is the claims key a client uses to present its access token in
+// the handshake. The client puts its token here; the server's Registry reads it.
+const ClaimToken = "token"
 
 // tokenBytes is the number of random bytes in a generated token (256-bit).
 const tokenBytes = 32
@@ -155,7 +156,7 @@ func (r *Registry) maybeReload() {
 func (r *Registry) Authorize(deviceID string, claims map[string]any) (string, error) {
 	_ = deviceID // identity is carried by the token, not the device ID
 
-	token, ok := claims[claimToken].(string)
+	token, ok := claims[ClaimToken].(string)
 	if !ok || token == "" {
 		return "", ErrNoToken
 	}

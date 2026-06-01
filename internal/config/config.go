@@ -55,11 +55,13 @@ type File struct {
 	Debug     bool      `yaml:"debug"`
 }
 
-// Access configures server-side client authorization. Server mode only.
+// Access configures client authorization.
 type Access struct {
-	// ClientsFile is the path to a JSON client registry (see internal/access).
-	// Empty admits every client (open mode).
+	// ClientsFile (server) is the path to a JSON client registry
+	// (see internal/access). Empty admits every client (open mode).
 	ClientsFile string `yaml:"clients_file"`
+	// Token (client) is the access token presented to a token-gated server.
+	Token string `yaml:"token"`
 }
 
 // Cover configures cover-traffic obfuscation. Must match on client and server.
@@ -309,6 +311,7 @@ func Apply(dst session.Config, f File) session.Config {
 	dst.TrafficMaxDelay = pickString(dst.TrafficMaxDelay, f.Traffic.MaxDelay)
 	dst.Amount = pickInt(dst.Amount, f.Gen.Amount)
 	dst.AccessRegistryPath = pickString(dst.AccessRegistryPath, f.Access.ClientsFile)
+	dst.AccessToken = pickString(dst.AccessToken, f.Access.Token)
 	dst.CoverEnabled = dst.CoverEnabled || f.Cover.Enabled
 	dst.CoverInterval = pickString(dst.CoverInterval, f.Cover.Interval)
 	dst.CoverSize = pickInt(dst.CoverSize, f.Cover.Size)

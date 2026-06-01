@@ -17,6 +17,7 @@ import (
 	"github.com/openlibrecommunity/olcrtc/internal/control"
 	enginebuiltin "github.com/openlibrecommunity/olcrtc/internal/engine/builtin"
 	"github.com/openlibrecommunity/olcrtc/internal/logger"
+	"github.com/openlibrecommunity/olcrtc/internal/muxconn"
 	"github.com/openlibrecommunity/olcrtc/internal/names"
 	"github.com/openlibrecommunity/olcrtc/internal/runtime"
 	"github.com/openlibrecommunity/olcrtc/internal/server"
@@ -141,6 +142,11 @@ var (
 	// ErrTrafficMaxDelayInvalid indicates that traffic.max_delay is not a non-negative duration.
 	ErrTrafficMaxDelayInvalid = errors.New(
 		"invalid traffic max delay (set traffic.max_delay to a duration >= 0 and >= traffic.min_delay)")
+	// ErrCoverIntervalInvalid indicates that cover.interval is not a non-negative duration.
+	ErrCoverIntervalInvalid = errors.New(
+		"invalid cover interval (set cover.interval to a duration >= 0)")
+	// ErrCoverSizeInvalid indicates that cover.size is negative.
+	ErrCoverSizeInvalid    = errors.New("invalid cover size (set cover.size to a value >= 0)")
 	errPositiveDuration    = errors.New("duration must be > 0")
 	errNonNegativeDuration = errors.New("duration must be >= 0")
 )
@@ -208,6 +214,11 @@ type Config struct {
 	// registry that authorizes incoming clients by token (see internal/access).
 	// Empty means admit every client (the default open behaviour).
 	AccessRegistryPath string
+	// Cover configures cover-traffic obfuscation. Disabled by default; must be
+	// set identically on client and server.
+	CoverEnabled  bool
+	CoverInterval string
+	CoverSize     int
 }
 
 // RegisterDefaults registers built-in carriers and transports.
@@ -551,7 +562,10 @@ func maxSessionDuration(cfg Config) (time.Duration, error) {
 }
 
 func validateTrafficConfig(cfg Config) error {
-	_, err := trafficConfig(cfg)
+	if _, err := trafficConfig(cfg); err != nil {
+		return err
+	}
+	_, err := coverConfig(cfg)
 	return err
 }
 
@@ -575,6 +589,24 @@ func trafficConfig(cfg Config) (transport.TrafficConfig, error) {
 		MaxPayloadSize: cfg.TrafficMaxPayloadSize,
 		MinDelay:       minDelay,
 		MaxDelay:       maxDelay,
+	}, nil
+}
+
+func coverConfig(cfg Config) (muxconn.CoverConfig, error) {
+	if !cfg.CoverEnabled {
+		return muxconn.CoverConfig{}, nil
+	}
+	if cfg.CoverSize < 0 {
+		return muxconn.CoverConfig{}, ErrCoverSizeInvalid
+	}
+	interval, err := parseOptionalNonNegativeDuration(cfg.CoverInterval)
+	if err != nil {
+		return muxconn.CoverConfig{}, fmt.Errorf("%w: %w", ErrCoverIntervalInvalid, err)
+	}
+	return muxconn.CoverConfig{
+		Enabled:  true,
+		Interval: interval,
+		Size:     cfg.CoverSize,
 	}, nil
 }
 
@@ -618,9 +650,13 @@ func Run(ctx context.Context, cfg Config) error {
 	if err != nil {
 		return err
 	}
+	cover, err := coverConfig(cfg)
+	if err != nil {
+		return err
+	}
 
 	run := func(ctx context.Context) error {
-		return runOnce(ctx, cfg, roomURL, liveness, traffic)
+		return runOnce(ctx, cfg, roomURL, liveness, traffic, cover)
 	}
 	if maxDuration > 0 {
 		return runWithSessionRotation(ctx, maxDuration, run)
@@ -662,6 +698,7 @@ func runOnce(
 	roomURL string,
 	liveness control.Config,
 	traffic transport.TrafficConfig,
+	cover muxconn.CoverConfig,
 ) error {
 	opts := buildTransportOptions(cfg)
 	switch cfg.Mode {
@@ -687,6 +724,7 @@ func runOnce(
 			Token:            cfg.Token,
 			Liveness:         liveness,
 			Traffic:          traffic,
+			Cover:            cover,
 			AuthHook:         authHook,
 			OnSessionOpen: func(sessionID, deviceID string, claims map[string]any) {
 				logger.Infof("session opened: id=%s device=%s claims=%v", sessionID, deviceID, claims)
@@ -718,6 +756,7 @@ func runOnce(
 			Token:            cfg.Token,
 			Liveness:         liveness,
 			Traffic:          traffic,
+			Cover:            cover,
 		}); err != nil {
 			return fmt.Errorf("client: %w", err)
 		}

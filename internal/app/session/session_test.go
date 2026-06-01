@@ -48,6 +48,36 @@ func TestBuildAuthHook(t *testing.T) {
 
 const testBadDuration = "nope"
 
+func TestCoverConfig(t *testing.T) {
+	// Disabled: always returns the zero (off) config regardless of other fields.
+	got, err := coverConfig(Config{CoverEnabled: false, CoverInterval: testBadDuration})
+	if err != nil {
+		t.Fatalf("coverConfig(disabled) error = %v", err)
+	}
+	if got.Enabled {
+		t.Fatal("coverConfig(disabled) returned Enabled=true")
+	}
+
+	// Enabled and valid.
+	got, err = coverConfig(Config{CoverEnabled: true, CoverInterval: "20ms", CoverSize: 256})
+	if err != nil {
+		t.Fatalf("coverConfig(valid) error = %v", err)
+	}
+	if !got.Enabled || got.Interval != 20*time.Millisecond || got.Size != 256 {
+		t.Fatalf("coverConfig(valid) = %+v, want enabled/20ms/256", got)
+	}
+
+	// Invalid interval and negative size are rejected.
+	_, err = coverConfig(Config{CoverEnabled: true, CoverInterval: testBadDuration})
+	if !errors.Is(err, ErrCoverIntervalInvalid) {
+		t.Fatalf("coverConfig(bad interval) error = %v, want ErrCoverIntervalInvalid", err)
+	}
+	_, err = coverConfig(Config{CoverEnabled: true, CoverSize: -1})
+	if !errors.Is(err, ErrCoverSizeInvalid) {
+		t.Fatalf("coverConfig(bad size) error = %v, want ErrCoverSizeInvalid", err)
+	}
+}
+
 func TestApplyTransportDefaults(t *testing.T) {
 	tests := []struct {
 		name string

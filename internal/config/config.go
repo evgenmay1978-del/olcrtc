@@ -50,6 +50,7 @@ type File struct {
 	Profiles  []Profile `yaml:"profiles"`
 	Failover  Failover  `yaml:"failover"`
 	Access    Access    `yaml:"access"`
+	Cover     Cover     `yaml:"cover"`
 	Data      string    `yaml:"data"`
 	Debug     bool      `yaml:"debug"`
 }
@@ -59,6 +60,16 @@ type Access struct {
 	// ClientsFile is the path to a JSON client registry (see internal/access).
 	// Empty admits every client (open mode).
 	ClientsFile string `yaml:"clients_file"`
+}
+
+// Cover configures cover-traffic obfuscation. Must match on client and server.
+type Cover struct {
+	// Enabled turns on frame typing and the idle padding pacer.
+	Enabled bool `yaml:"enabled"`
+	// Interval is the idle gap after which a padding frame is sent (e.g. "20ms").
+	Interval string `yaml:"interval"`
+	// Size is the padding payload size in bytes.
+	Size int `yaml:"size"`
 }
 
 // Profile is a failover entry that overrides top-level runtime fields.
@@ -298,6 +309,9 @@ func Apply(dst session.Config, f File) session.Config {
 	dst.TrafficMaxDelay = pickString(dst.TrafficMaxDelay, f.Traffic.MaxDelay)
 	dst.Amount = pickInt(dst.Amount, f.Gen.Amount)
 	dst.AccessRegistryPath = pickString(dst.AccessRegistryPath, f.Access.ClientsFile)
+	dst.CoverEnabled = dst.CoverEnabled || f.Cover.Enabled
+	dst.CoverInterval = pickString(dst.CoverInterval, f.Cover.Interval)
+	dst.CoverSize = pickInt(dst.CoverSize, f.Cover.Size)
 	return dst
 }
 

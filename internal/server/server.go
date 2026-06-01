@@ -81,6 +81,8 @@ type Server struct {
 	socksProxyPass string
 	liveness       control.Config
 	health         *runtime.HealthTracker
+	cover          muxconn.CoverConfig
+	coverCtx       context.Context //nolint:containedctx // base ctx for per-session cover pacers built off Run's runCtx
 	done           chan struct{}
 	doneOnce       sync.Once
 }
@@ -120,6 +122,7 @@ type Config struct {
 	Token            string
 	Liveness         control.Config
 	Traffic          transport.TrafficConfig
+	Cover            muxconn.CoverConfig
 
 	// AuthHook is invoked after CLIENT_HELLO to authorize the client and
 	// return a session ID. If nil, every client is admitted with a random UUID.
@@ -174,9 +177,11 @@ func Run(ctx context.Context, cfg Config) error {
 		socksProxyPass: cfg.SOCKSProxyPass,
 		liveness:       cfg.Liveness,
 		health:         runtime.NewHealthTracker(cfg.OnHealth),
+		cover:          cfg.Cover,
 		peerSessions:   make(map[string]*peerSession),
 		done:           make(chan struct{}),
 	}
+	s.coverCtx = runCtx
 	s.setupResolver()
 
 	// Register shutdown BEFORE bringUpLink so a partial setup (e.g.
@@ -293,6 +298,7 @@ func (s *Server) bringUpLink(
 
 func (s *Server) installSession() {
 	conn := muxconn.New(s.ln, s.cipher)
+	conn.ApplyCover(s.coverCtx, s.cover)
 	sess, err := smux.Server(conn, smuxConfig(linkMaxPayload(s.ln)))
 	if err != nil {
 		logger.Warnf("smux server init failed: %v", err)
@@ -319,6 +325,7 @@ func (s *Server) reinstallSession(dead *smux.Session) {
 
 	// Pre-build the replacement so we can swap atomically below.
 	newConn := muxconn.New(s.ln, s.cipher)
+	newConn.ApplyCover(s.coverCtx, s.cover)
 	newSess, err := smux.Server(newConn, smuxConfig(linkMaxPayload(s.ln)))
 	if err != nil {
 		logger.Warnf("smux server init failed: %v", err)
@@ -467,6 +474,7 @@ func (s *Server) getPeerSession(peerID string) *peerSession {
 		return ps
 	}
 	conn := muxconn.NewPeer(s.peerLn, s.cipher, peerID)
+	conn.ApplyCover(s.coverCtx, s.cover)
 	sess, err := smux.Server(conn, smuxConfig(linkMaxPayload(s.ln)))
 	if err != nil {
 		s.sessMu.Unlock()

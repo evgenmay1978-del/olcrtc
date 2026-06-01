@@ -88,6 +88,7 @@ type Config struct {
 	Token            string
 	Liveness         control.Config
 	Traffic          transport.TrafficConfig
+	Cover            muxconn.CoverConfig
 
 	// DeviceID overrides the persistent client-side device identifier. Leave
 	// empty to derive one from DeviceIDPath (or generate a random one if both
@@ -218,6 +219,7 @@ func (c *Client) bringUpLink(
 	}
 
 	c.conn = muxconn.New(ln, c.cipher)
+	c.conn.ApplyCover(ctx, cfg.Cover)
 	sess, err := smux.Client(c.conn, smuxConfig(linkMaxPayload(ln)))
 	if err != nil {
 		return fmt.Errorf("smux client: %w", err)
@@ -342,6 +344,7 @@ func (c *Client) handleReconnect(ctx context.Context, cfg Config, cancel context
 	// the old session is being torn down. tryReopenSession will swap it
 	// again with its own conn on each attempt.
 	newConn := muxconn.New(c.ln, c.cipher)
+	newConn.ApplyCover(ctx, cfg.Cover)
 
 	c.sessMu.Lock()
 	oldControl := c.controlStrm
@@ -440,6 +443,7 @@ func (c *Client) tryReopenSession(
 	attempt int,
 ) bool {
 	conn := muxconn.New(c.ln, c.cipher)
+	conn.ApplyCover(ctx, cfg.Cover)
 
 	c.sessMu.Lock()
 	old := c.conn

@@ -51,6 +51,15 @@ sei_ack="${OLCRTC_SEI_ACK:-0}"
 debug="${OLCRTC_DEBUG:-false}"
 ffmpeg="${OLCRTC_FFMPEG:-ffmpeg}"
 
+# Access control / billing (server) and cover traffic (both sides).
+access_clients_file="${OLCRTC_ACCESS_CLIENTS_FILE:-}"
+access_token="${OLCRTC_ACCESS_TOKEN:-}"
+access_max_streams="${OLCRTC_ACCESS_MAX_STREAMS:-0}"
+access_usage_file="${OLCRTC_ACCESS_USAGE_FILE:-}"
+cover_enabled="${OLCRTC_COVER:-}"
+cover_interval="${OLCRTC_COVER_INTERVAL:-20ms}"
+cover_size="${OLCRTC_COVER_SIZE:-128}"
+
 case "$mode" in
     srv|cnc) ;;
     *) die "set OLCRTC_MODE to srv or cnc" ;;
@@ -163,6 +172,30 @@ sei:
   ack_timeout_ms: $sei_ack
 EOF
 fi
+
+# Access control / billing block. clients_file gates the server by token;
+# usage_file records per-client traffic; max_streams caps concurrency.
+# On the client, token authorizes against a gated server.
+if [ -n "$access_clients_file" ] || [ -n "$access_token" ] || \
+   [ -n "$access_usage_file" ] || [ "$access_max_streams" != "0" ]; then
+    printf 'access:\n' >> "$config"
+    [ -n "$access_clients_file" ] && printf '  clients_file: "%s"\n' "$access_clients_file" >> "$config"
+    [ -n "$access_token" ] && printf '  token: "%s"\n' "$access_token" >> "$config"
+    [ -n "$access_usage_file" ] && printf '  usage_file: "%s"\n' "$access_usage_file" >> "$config"
+    [ "$access_max_streams" != "0" ] && printf '  max_streams_per_client: %s\n' "$access_max_streams" >> "$config"
+fi
+
+# Cover traffic block. Must match on both client and server.
+case "${cover_enabled}" in
+    1|true|TRUE|yes|YES|on|ON)
+        cat >> "$config" <<EOF
+cover:
+  enabled: true
+  interval: $cover_interval
+  size: $cover_size
+EOF
+        ;;
+esac
 
 case "${debug}" in
     1|true|TRUE|yes|YES|on|ON)

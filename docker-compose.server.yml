@@ -32,6 +32,16 @@ services:
       OLCRTC_SEI_FRAG: "${OLCRTC_SEI_FRAG:-0}"
       OLCRTC_SEI_ACK: "${OLCRTC_SEI_ACK:-0}"
       OLCRTC_DEBUG: "${OLCRTC_DEBUG:-false}"
+      # Access control / billing (paid multi-client). Manage the registry with
+      # docker compose exec olcrtc-server \
+      #   olcrtc-admin -registry /var/lib/olcrtc/clients.json <command>
+      OLCRTC_ACCESS_CLIENTS_FILE: "${OLCRTC_ACCESS_CLIENTS_FILE:-}"
+      OLCRTC_ACCESS_USAGE_FILE: "${OLCRTC_ACCESS_USAGE_FILE:-}"
+      OLCRTC_ACCESS_MAX_STREAMS: "${OLCRTC_ACCESS_MAX_STREAMS:-0}"
+      # Cover traffic (must match the client) to resist traffic analysis.
+      OLCRTC_COVER: "${OLCRTC_COVER:-}"
+      OLCRTC_COVER_INTERVAL: "${OLCRTC_COVER_INTERVAL:-20ms}"
+      OLCRTC_COVER_SIZE: "${OLCRTC_COVER_SIZE:-128}"
     volumes:
       - olcrtc-state:/var/lib/olcrtc
     init: true

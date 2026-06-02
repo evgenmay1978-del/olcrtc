@@ -132,6 +132,38 @@ docker compose -f .local/docker-compose.server.yml --env-file .local/.env up -d
 
 ---
 
+## Платный сервис в Docker (доступ + биллинг + маскировка)
+
+Образ включает `olcrtc-admin`, поэтому управлять доступом можно прямо в
+контейнере. Включите контроль доступа, учёт трафика и cover-traffic через env:
+
+```bash
+OLCRTC_ACCESS_CLIENTS_FILE=/var/lib/olcrtc/clients.json \
+OLCRTC_ACCESS_USAGE_FILE=/var/lib/olcrtc/usage.json \
+OLCRTC_ACCESS_MAX_STREAMS=8 \
+OLCRTC_COVER=true \
+docker compose -f docker-compose.server.yml up -d
+```
+
+Управление клиентами внутри запущенного контейнера:
+
+```bash
+REG=/var/lib/olcrtc/clients.json
+# Бесплатно выдать доступ на 30 дней:
+docker compose exec olcrtc-server olcrtc-admin -registry $REG grant alice 720h
+# Платная заявка -> подтверждение после перевода:
+docker compose exec olcrtc-server olcrtc-admin -registry $REG request bob 24h
+docker compose exec olcrtc-server olcrtc-admin -registry $REG approve bob 720h
+# Список и трафик для счёта:
+docker compose exec olcrtc-server olcrtc-admin -registry $REG list
+docker compose exec olcrtc-server olcrtc-admin -usage /var/lib/olcrtc/usage.json usage
+```
+
+`clients.json` и `usage.json` лежат в томе `olcrtc-state` и переживают
+перезапуск контейнера. Подробности по командам -> [access.md](access.md).
+
+---
+
 ## Примечания
 
 - Храните все локальные Docker-файлы внутри отдельной папки `.local`.

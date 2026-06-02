@@ -6,8 +6,8 @@ require (
 	codeberg.org/rape4me/kc v0.0.0-20260527074346-4cb2a45790c2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/livekit/protocol v1.46.0
-	github.com/livekit/server-sdk-go/v2 v2.16.4-0.20260522175902-00c9771fae5a
+	github.com/livekit/protocol v1.46.4
+	github.com/livekit/server-sdk-go/v2 v2.16.4
 	github.com/magefile/mage v1.17.2
 	github.com/pion/interceptor v0.1.45
 	github.com/pion/logging v0.2.4
@@ -15,7 +15,7 @@ require (
 	github.com/pion/rtp v1.10.2
 	github.com/pion/webrtc/v4 v4.2.13
 	github.com/xtaci/kcp-go/v5 v5.6.72
-	github.com/xtaci/smux v1.5.57
+	github.com/xtaci/smux v2.0.1+incompatible
 	github.com/zarazaex69/gr v0.1.5
 	github.com/zarazaex69/j v0.0.0-20260529190049-6e5d2c4287ce
 	golang.org/x/crypto v0.52.0

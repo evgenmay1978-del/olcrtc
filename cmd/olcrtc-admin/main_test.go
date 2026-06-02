@@ -123,6 +123,30 @@ func TestRunClientConfig(t *testing.T) {
 	}
 }
 
+func TestRunRotate(t *testing.T) {
+	reg := filepath.Join(t.TempDir(), "clients.json")
+	var out bytes.Buffer
+	run2 := func(args ...string) error {
+		out.Reset()
+		return run(append([]string{flagRegistry, reg}, args...), &out)
+	}
+
+	if err := run2(cmdGrant, labelAlice, "720h"); err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+	if err := run2("rotate", labelAlice); err != nil {
+		t.Fatalf("rotate: %v", err)
+	}
+	if !strings.Contains(out.String(), "rotated token") || !strings.Contains(out.String(), "token:") {
+		t.Fatalf("rotate output = %q", out.String())
+	}
+
+	// Rotating an unknown client errors.
+	if err := run2("rotate", "ghost"); err == nil {
+		t.Fatal("rotate ghost: expected error, got nil")
+	}
+}
+
 func TestRunUsageErrors(t *testing.T) {
 	var out bytes.Buffer
 	if err := run(nil, &out); !errors.Is(err, errUsage) {

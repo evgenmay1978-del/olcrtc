@@ -150,6 +150,44 @@ func TestPruneExpiredPending(t *testing.T) {
 	}
 }
 
+func TestRotate(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "clients.json")
+	future := time.Now().Add(24 * time.Hour)
+	s, _ := OpenStore(path)
+	oldToken, _ := s.Add("eve", "", StatusActive, 0)
+	// Give it an explicit expiry so we can confirm rotation preserves it.
+	_ = s.SetStatus("eve", StatusActive, 0)
+	s.clients[0].Expires = future
+
+	newToken, err := s.Rotate("eve")
+	if err != nil {
+		t.Fatalf("Rotate: %v", err)
+	}
+	if newToken == oldToken || newToken == "" {
+		t.Fatalf("Rotate returned %q (old %q)", newToken, oldToken)
+	}
+	if !s.clients[0].Expires.Equal(future) {
+		t.Fatalf("Rotate changed expiry: %v != %v", s.clients[0].Expires, future)
+	}
+	if err := s.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	r, _ := New(path)
+	// Old token rejected, new token authorized.
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: oldToken}); !errors.Is(err, ErrAccessDenied) {
+		t.Fatalf("old token error = %v, want ErrAccessDenied", err)
+	}
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: newToken}); err != nil {
+		t.Fatalf("new token error = %v, want nil", err)
+	}
+
+	// Rotating a missing client errors.
+	if _, err := s.Rotate("ghost"); !errors.Is(err, ErrClientNotFound) {
+		t.Fatalf("Rotate(ghost) = %v, want ErrClientNotFound", err)
+	}
+}
+
 func TestClientsSortedByLabel(t *testing.T) {
 	s, _ := OpenStore(filepath.Join(t.TempDir(), "c.json"))
 	_, _ = s.Add("zoe", "", StatusActive, 0)

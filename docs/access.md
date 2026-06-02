@@ -118,6 +118,10 @@ olcrtc-admin -registry clients.json reject bob
 olcrtc-admin -registry clients.json revoke alice
 olcrtc-admin -registry clients.json enable alice
 olcrtc-admin -registry clients.json remove alice
+
+# Перевыпустить токен (например, если он утёк) — подписка и срок сохраняются,
+# старый токен сразу перестаёт работать:
+olcrtc-admin -registry clients.json rotate alice
 ```
 
 `grant` выдаёт доступ бесплатно (нужным людям), `request` + `approve`/`reject` —

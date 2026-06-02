@@ -20,6 +20,7 @@
 //	revoke  <label>                   disable an existing client
 //	enable  <label>                   re-enable a disabled client
 //	remove  <label>                   delete a client
+//	rotate  <label>                   issue a fresh token (e.g. after a leak), keeping the subscription
 //	prune                             auto-reject pending requests past their deadline
 //	client-config <label> -server <server.yaml>
 //	                                  print a ready-to-run client YAML for the client
@@ -45,7 +46,7 @@ const cmdPay = "pay"
 
 // errUsage signals a usage problem; main prints it without a stack.
 var errUsage = errors.New("usage: olcrtc-admin -registry <clients.json> <command> [args] " +
-	"(commands: list, grant, request, approve, reject, revoke, enable, remove, prune, client-config, pay)")
+	"(commands: list, grant, request, approve, reject, revoke, enable, remove, rotate, prune, client-config, pay)")
 
 // printf writes formatted output, ignoring write errors (stdout to a terminal
 // or pipe; a failed write here is not actionable).
@@ -120,6 +121,7 @@ var commands = map[string]commandFunc{
 	"revoke":  func(s *access.Store, a []string, o io.Writer) error { return setDisabled(s, a, true, o) },
 	"enable":  func(s *access.Store, a []string, o io.Writer) error { return setDisabled(s, a, false, o) },
 	"remove":  remove,
+	"rotate":  rotate,
 	"prune":   func(s *access.Store, _ []string, o io.Writer) error { return prune(s, o) },
 }
 
@@ -328,6 +330,21 @@ func remove(store *access.Store, args []string, out io.Writer) error {
 		return fmt.Errorf("save registry: %w", err)
 	}
 	printf(out, "removed %q\n", args[0])
+	return nil
+}
+
+func rotate(store *access.Store, args []string, out io.Writer) error {
+	if len(args) == 0 {
+		return fmt.Errorf("%w: rotate", errMissingLabel)
+	}
+	token, err := store.Rotate(args[0])
+	if err != nil {
+		return fmt.Errorf("rotate token: %w", err)
+	}
+	if err := store.Save(); err != nil {
+		return fmt.Errorf("save registry: %w", err)
+	}
+	printf(out, "rotated token for %q (old token no longer works)\ntoken: %s\n", args[0], token)
 	return nil
 }
 

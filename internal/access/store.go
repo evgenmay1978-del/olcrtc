@@ -113,6 +113,22 @@ func (s *Store) SetStatus(label, status string, ttl time.Duration) error {
 	return nil
 }
 
+// Rotate generates a fresh token for the client with the given label, leaving
+// its status, expiry, and other fields intact. Use it when a token leaks: the
+// old token stops working immediately and the new one is returned to reissue.
+func (s *Store) Rotate(label string) (string, error) {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return "", fmt.Errorf("%w: %q", ErrClientNotFound, label)
+	}
+	token, err := GenerateToken()
+	if err != nil {
+		return "", err
+	}
+	s.clients[i].Token = token
+	return token, nil
+}
+
 // SetDisabled toggles revocation by label.
 func (s *Store) SetDisabled(label string, disabled bool) error {
 	i := s.findByLabel(label)

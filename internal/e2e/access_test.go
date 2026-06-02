@@ -43,6 +43,15 @@ func startGatedTunnel(
 	registryPath, accessToken string,
 ) (string, chan error) {
 	t.Helper()
+	return startGatedTunnelLimited(t, registryPath, accessToken, 0)
+}
+
+func startGatedTunnelLimited(
+	t *testing.T,
+	registryPath, accessToken string,
+	maxStreams int,
+) (string, chan error) {
+	t.Helper()
 
 	carrierName, room := registerMemoryCarrier(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -58,13 +67,14 @@ func startGatedTunnel(
 	serverErr := make(chan error, 1)
 	go func() {
 		serverErr <- server.Run(ctx, server.Config{
-			Transport: transportData,
-			Carrier:   carrierName,
-			RoomURL:   testRoom,
-			KeyHex:    testKeyHex,
-			DNSServer: localDNSServer,
-			Cover:     cover,
-			AuthHook:  reg.Authorize,
+			Transport:            transportData,
+			Carrier:              carrierName,
+			RoomURL:              testRoom,
+			KeyHex:               testKeyHex,
+			DNSServer:            localDNSServer,
+			Cover:                cover,
+			MaxStreamsPerSession: maxStreams,
+			AuthHook:             reg.Authorize,
 		})
 	}()
 	room.waitConnected(t)
@@ -149,4 +159,43 @@ func TestPaidFlowRevokedTokenIsRejected(t *testing.T) {
 		_ = conn.Close()
 		t.Fatal("revoked token produced a working tunnel; want rejection")
 	}
+}
+
+// TestPaidFlowEnforcesStreamLimit verifies the per-client concurrency cap: with
+// a limit of 1, a first held-open tunnel stream works, but a concurrent second
+// one is refused by the server.
+func TestPaidFlowEnforcesStreamLimit(t *testing.T) {
+	token, err := access.GenerateToken()
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+	registry := writeAccessRegistry(t, []access.Client{
+		{Token: token, Label: "limited", Status: access.StatusActive},
+	})
+	echoAddr := startEchoServer(t)
+
+	socksAddr, _ := startGatedTunnelLimited(t, registry, token, 1)
+
+	// First stream: connect and keep it open (echo server holds it).
+	first := eventuallyConnectViaSOCKS(t, socksAddr, echoAddr)
+	defer func() { _ = first.Close() }()
+	if _, err := first.Write([]byte("hold\n")); err != nil {
+		t.Fatalf("write to first stream: %v", err)
+	}
+	_ = first.SetReadDeadline(time.Now().Add(2 * time.Second))
+	if _, err := bufio.NewReader(first).ReadBytes('\n'); err != nil {
+		t.Fatalf("first stream echo failed: %v", err)
+	}
+
+	// Second concurrent stream must be rejected while the first is held: the
+	// SOCKS CONNECT cannot complete because the server refuses the stream.
+	if conn, err := connectViaSOCKSWithin(socksAddr, echoAddr, 2*time.Second); err == nil {
+		_ = conn.Close()
+		t.Fatal("second concurrent stream was allowed; want limit rejection")
+	}
+
+	// After the first stream closes, a new stream is allowed again.
+	_ = first.Close()
+	conn := eventuallyConnectViaSOCKS(t, socksAddr, echoAddr)
+	_ = conn.Close()
 }

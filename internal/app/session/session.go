@@ -13,9 +13,9 @@ import (
 	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/auth"
 	"github.com/openlibrecommunity/olcrtc/internal/client"
-	"github.com/openlibrecommunity/olcrtc/internal/handshake"
 	"github.com/openlibrecommunity/olcrtc/internal/control"
 	enginebuiltin "github.com/openlibrecommunity/olcrtc/internal/engine/builtin"
+	"github.com/openlibrecommunity/olcrtc/internal/handshake"
 	"github.com/openlibrecommunity/olcrtc/internal/logger"
 	"github.com/openlibrecommunity/olcrtc/internal/muxconn"
 	"github.com/openlibrecommunity/olcrtc/internal/names"
@@ -217,6 +217,9 @@ type Config struct {
 	// AccessToken, when set on the client, is sent to the server in the
 	// handshake claims under "token" so a token-gated server can authorize it.
 	AccessToken string
+	// MaxStreamsPerClient caps concurrent tunnel streams per authorized client
+	// on the server. 0 disables the limit.
+	MaxStreamsPerClient int
 	// Cover configures cover-traffic obfuscation. Disabled by default; must be
 	// set identically on client and server.
 	CoverEnabled  bool
@@ -721,24 +724,25 @@ func runOnce(
 			return err
 		}
 		if err := server.Run(ctx, server.Config{
-			Transport:        cfg.Transport,
-			Carrier:          cfg.Auth,
-			RoomURL:          roomURL,
-			ChannelID:        cfg.ChannelID,
-			KeyHex:           cfg.KeyHex,
-			DNSServer:        cfg.DNSServer,
-			SOCKSProxyAddr:   cfg.SOCKSProxyAddr,
-			SOCKSProxyPort:   cfg.SOCKSProxyPort,
-			SOCKSProxyUser:   cfg.SOCKSProxyUser,
-			SOCKSProxyPass:   cfg.SOCKSProxyPass,
-			TransportOptions: opts,
-			Engine:           cfg.Engine,
-			URL:              cfg.URL,
-			Token:            cfg.Token,
-			Liveness:         liveness,
-			Traffic:          traffic,
-			Cover:            cover,
-			AuthHook:         authHook,
+			Transport:            cfg.Transport,
+			Carrier:              cfg.Auth,
+			RoomURL:              roomURL,
+			ChannelID:            cfg.ChannelID,
+			KeyHex:               cfg.KeyHex,
+			DNSServer:            cfg.DNSServer,
+			SOCKSProxyAddr:       cfg.SOCKSProxyAddr,
+			SOCKSProxyPort:       cfg.SOCKSProxyPort,
+			SOCKSProxyUser:       cfg.SOCKSProxyUser,
+			SOCKSProxyPass:       cfg.SOCKSProxyPass,
+			TransportOptions:     opts,
+			Engine:               cfg.Engine,
+			URL:                  cfg.URL,
+			Token:                cfg.Token,
+			Liveness:             liveness,
+			Traffic:              traffic,
+			Cover:                cover,
+			MaxStreamsPerSession: cfg.MaxStreamsPerClient,
+			AuthHook:             authHook,
 			OnSessionOpen: func(sessionID, deviceID string, claims map[string]any) {
 				logger.Infof("session opened: id=%s device=%s claims=%v", sessionID, deviceID, claims)
 			},

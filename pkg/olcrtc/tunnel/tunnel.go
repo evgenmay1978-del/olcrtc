@@ -119,6 +119,11 @@ type Config struct {
 	// the client's setting. See docs/cover.md.
 	Cover CoverConfig
 
+	// MaxStreamsPerSession caps concurrent tunnel streams per authorized
+	// client. 0 disables the limit. Use it to bound resource use per
+	// subscriber and to back a per-plan concurrency tier.
+	MaxStreamsPerSession int
+
 	// --- hooks ---
 	// AuthHook authorizes the client. If nil, every client is admitted with a
 	// random UUID as session ID.
@@ -145,24 +150,25 @@ func New(cfg Config) *Server {
 // Run starts the server and blocks until ctx is cancelled or the carrier ends.
 func (s *Server) Run(ctx context.Context) error {
 	if err := server.Run(ctx, server.Config{
-		Transport:        s.cfg.Transport,
-		Carrier:          s.cfg.Carrier,
-		RoomURL:          s.cfg.RoomURL,
-		Engine:           s.cfg.Engine,
-		URL:              s.cfg.URL,
-		Token:            s.cfg.Token,
-		KeyHex:           s.cfg.KeyHex,
-		DNSServer:        s.cfg.DNSServer,
-		SOCKSProxyAddr:   s.cfg.SOCKSProxyAddr,
-		SOCKSProxyPort:   s.cfg.SOCKSProxyPort,
-		SOCKSProxyUser:   s.cfg.SOCKSProxyUser,
-		SOCKSProxyPass:   s.cfg.SOCKSProxyPass,
-		TransportOptions: s.cfg.TransportOptions,
-		Cover:            s.cfg.Cover,
-		AuthHook:         s.cfg.AuthHook,
-		OnSessionOpen:    s.cfg.OnSessionOpen,
-		OnSessionClose:   s.cfg.OnSessionClose,
-		OnTraffic:        s.cfg.OnTraffic,
+		Transport:            s.cfg.Transport,
+		Carrier:              s.cfg.Carrier,
+		RoomURL:              s.cfg.RoomURL,
+		Engine:               s.cfg.Engine,
+		URL:                  s.cfg.URL,
+		Token:                s.cfg.Token,
+		KeyHex:               s.cfg.KeyHex,
+		DNSServer:            s.cfg.DNSServer,
+		SOCKSProxyAddr:       s.cfg.SOCKSProxyAddr,
+		SOCKSProxyPort:       s.cfg.SOCKSProxyPort,
+		SOCKSProxyUser:       s.cfg.SOCKSProxyUser,
+		SOCKSProxyPass:       s.cfg.SOCKSProxyPass,
+		TransportOptions:     s.cfg.TransportOptions,
+		Cover:                s.cfg.Cover,
+		MaxStreamsPerSession: s.cfg.MaxStreamsPerSession,
+		AuthHook:             s.cfg.AuthHook,
+		OnSessionOpen:        s.cfg.OnSessionOpen,
+		OnSessionClose:       s.cfg.OnSessionClose,
+		OnTraffic:            s.cfg.OnTraffic,
 	}); err != nil {
 		return fmt.Errorf("tunnel: %w", err)
 	}

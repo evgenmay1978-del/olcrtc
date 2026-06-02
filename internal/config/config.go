@@ -62,6 +62,9 @@ type Access struct {
 	ClientsFile string `yaml:"clients_file"`
 	// Token (client) is the access token presented to a token-gated server.
 	Token string `yaml:"token"`
+	// MaxStreamsPerClient (server) caps concurrent tunnel streams per
+	// authorized client. 0 disables the limit.
+	MaxStreamsPerClient int `yaml:"max_streams_per_client"`
 }
 
 // Cover configures cover-traffic obfuscation. Must match on client and server.
@@ -312,6 +315,7 @@ func Apply(dst session.Config, f File) session.Config {
 	dst.Amount = pickInt(dst.Amount, f.Gen.Amount)
 	dst.AccessRegistryPath = pickString(dst.AccessRegistryPath, f.Access.ClientsFile)
 	dst.AccessToken = pickString(dst.AccessToken, f.Access.Token)
+	dst.MaxStreamsPerClient = pickInt(dst.MaxStreamsPerClient, f.Access.MaxStreamsPerClient)
 	dst.CoverEnabled = dst.CoverEnabled || f.Cover.Enabled
 	dst.CoverInterval = pickString(dst.CoverInterval, f.Cover.Interval)
 	dst.CoverSize = pickInt(dst.CoverSize, f.Cover.Size)

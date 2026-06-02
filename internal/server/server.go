@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/openlibrecommunity/olcrtc/internal/accounting"
 	"github.com/openlibrecommunity/olcrtc/internal/control"
 	"github.com/openlibrecommunity/olcrtc/internal/crypto"
 	"github.com/openlibrecommunity/olcrtc/internal/handshake"
@@ -83,6 +84,7 @@ type Server struct {
 	health         *runtime.HealthTracker
 	cover          muxconn.CoverConfig
 	coverCtx       context.Context //nolint:containedctx // base ctx for per-session cover pacers built off Run's runCtx
+	usage          *accounting.Tracker
 	done           chan struct{}
 	doneOnce       sync.Once
 }
@@ -123,6 +125,10 @@ type Config struct {
 	Liveness         control.Config
 	Traffic          transport.TrafficConfig
 	Cover            muxconn.CoverConfig
+
+	// MaxStreamsPerSession caps the number of concurrent tunnel streams a
+	// single authorized client (session) may hold. 0 disables the limit.
+	MaxStreamsPerSession int
 
 	// AuthHook is invoked after CLIENT_HELLO to authorize the client and
 	// return a session ID. If nil, every client is admitted with a random UUID.
@@ -178,6 +184,7 @@ func Run(ctx context.Context, cfg Config) error {
 		liveness:       cfg.Liveness,
 		health:         runtime.NewHealthTracker(cfg.OnHealth),
 		cover:          cfg.Cover,
+		usage:          accounting.New(cfg.MaxStreamsPerSession),
 		peerSessions:   make(map[string]*peerSession),
 		done:           make(chan struct{}),
 	}
@@ -800,6 +807,12 @@ func (s *Server) Status() control.Status {
 	return s.health.Status()
 }
 
+// Usage returns a snapshot of per-session stream and byte counts, for metrics
+// or volume billing. Each Stat's SessionID is the ID issued at handshake.
+func (s *Server) Usage() []accounting.Stat {
+	return s.usage.Snapshot()
+}
+
 func (s *Server) recordSession(sessionID string) { s.health.RecordSession(sessionID) }
 func (s *Server) recordPong(h control.Health)    { s.health.RecordPong(h) }
 func (s *Server) recordMissed(missed int)        { s.health.RecordMissed(missed) }
@@ -835,6 +848,12 @@ func (s *Server) handleStream(_ context.Context, stream *smux.Stream, sessionID 
 			header = append(header, tmp[:n]...)
 			if req, ok := parseConnectRequest(header); ok {
 				_ = stream.SetReadDeadline(time.Time{})
+				if !s.usage.Acquire(sessionID) {
+					logger.Warnf("session %s: concurrent stream limit reached, rejecting %s:%d",
+						sessionID, req.Addr, req.Port)
+					return
+				}
+				defer s.usage.Release(sessionID)
 				s.dispatch(stream, req, sessionID)
 				return
 			}
@@ -902,6 +921,7 @@ func (s *Server) dispatch(stream *smux.Stream, req ConnectRequest, sessionID str
 	if in > 0 {
 		bytesIn = uint64(in)
 	}
+	s.usage.AddBytes(sessionID, bytesIn, bytesOut)
 	if s.onTraffic != nil {
 		s.onTraffic(sessionID, addr, bytesIn, bytesOut)
 	}

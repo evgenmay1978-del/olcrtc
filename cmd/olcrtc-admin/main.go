@@ -24,6 +24,7 @@
 //	prune                             auto-reject pending requests past their deadline
 //	client-config <label> -server <server.yaml>
 //	                                  print a ready-to-run client YAML for the client
+//	usage -usage <usage.json>         print per-session traffic usage for billing
 //	pay                               print payment instructions (from -pay-info file)
 //
 // ttl is a Go duration like 720h (30 days). Omit for no expiry.
@@ -38,6 +39,7 @@ import (
 	"time"
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
+	"github.com/openlibrecommunity/olcrtc/internal/accounting"
 	"github.com/openlibrecommunity/olcrtc/internal/config"
 )
 
@@ -46,7 +48,7 @@ const cmdPay = "pay"
 
 // errUsage signals a usage problem; main prints it without a stack.
 var errUsage = errors.New("usage: olcrtc-admin -registry <clients.json> <command> [args] " +
-	"(commands: list, grant, request, approve, reject, revoke, enable, remove, rotate, prune, client-config, pay)")
+	"(commands: list, grant, request, approve, reject, revoke, enable, remove, rotate, prune, client-config, usage, pay)")
 
 // printf writes formatted output, ignoring write errors (stdout to a terminal
 // or pipe; a failed write here is not actionable).
@@ -74,8 +76,14 @@ func main() {
 // cmdClientConfig generates a ready-to-run client YAML for an existing client.
 const cmdClientConfig = "client-config"
 
+// cmdUsage prints traffic usage; it reads the usage file, not the registry.
+const cmdUsage = "usage"
+
 // errNoServerConfig is returned when client-config is run without -server.
 var errNoServerConfig = errors.New("client-config: pass -server <server.yaml> to mint a matching client config")
+
+// errNoUsageFile is returned when usage is run without -usage.
+var errNoUsageFile = errors.New("usage: pass -usage <usage.json> (the server's access.usage_file)")
 
 func run(args []string, out io.Writer) error {
 	flags := parseFlags(args)
@@ -84,9 +92,12 @@ func run(args []string, out io.Writer) error {
 	}
 	cmd, cmdArgs := flags.rest[0], flags.rest[1:]
 
-	// pay only prints instructions; it needs no registry.
+	// pay and usage need no registry.
 	if cmd == cmdPay {
 		return printPayInfo(flags.payInfo, out)
+	}
+	if cmd == cmdUsage {
+		return showUsage(flags.usage, out)
 	}
 	if flags.registry == "" {
 		return errUsage
@@ -139,7 +150,19 @@ type adminFlags struct {
 	registry string
 	payInfo  string
 	server   string
+	usage    string
 	rest     []string
+}
+
+// flagTargets maps a parsed adminFlags to the string field each named flag
+// fills, so parseFlags stays a simple loop instead of a large switch.
+func (f *adminFlags) flagTargets() map[string]*string {
+	return map[string]*string{
+		"-registry": &f.registry, "--registry": &f.registry,
+		"-pay-info": &f.payInfo, "--pay-info": &f.payInfo,
+		"-server": &f.server, "--server": &f.server,
+		"-usage": &f.usage, "--usage": &f.usage,
+	}
 }
 
 // parseFlags pulls the named flags out of args, returning the rest as the
@@ -147,28 +170,64 @@ type adminFlags struct {
 // in any position without pulling in the flag package's global state.
 func parseFlags(args []string) adminFlags {
 	var f adminFlags
+	targets := f.flagTargets()
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-registry", "--registry":
+		if dst, ok := targets[args[i]]; ok {
 			if i+1 < len(args) {
-				f.registry = args[i+1]
+				*dst = args[i+1]
 				i++
 			}
-		case "-pay-info", "--pay-info":
-			if i+1 < len(args) {
-				f.payInfo = args[i+1]
-				i++
-			}
-		case "-server", "--server":
-			if i+1 < len(args) {
-				f.server = args[i+1]
-				i++
-			}
-		default:
-			f.rest = append(f.rest, args[i])
+			continue
 		}
+		f.rest = append(f.rest, args[i])
 	}
 	return f
+}
+
+// showUsage prints the server's persisted traffic usage, one row per session,
+// for volume billing. The usage file is the server's access.usage_file.
+func showUsage(usagePath string, out io.Writer) error {
+	if usagePath == "" {
+		return errNoUsageFile
+	}
+	records, err := accounting.ReadRecords(usagePath)
+	if err != nil {
+		return fmt.Errorf("read usage: %w", err)
+	}
+	if len(records) == 0 {
+		writeLine(out, "no usage recorded yet")
+		return nil
+	}
+	w := tabwriter.NewWriter(out, 0, 2, 2, ' ', 0)
+	_, _ = fmt.Fprintln(w, "SESSION\tDEVICE\tSTREAMS\tIN\tOUT\tTOTAL")
+	var totalIn, totalOut uint64
+	for _, r := range records {
+		totalIn += r.BytesIn
+		totalOut += r.BytesOut
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\n",
+			r.SessionID, r.DeviceID, r.TotalStreams,
+			humanBytes(r.BytesIn), humanBytes(r.BytesOut), humanBytes(r.BytesIn+r.BytesOut))
+	}
+	_, _ = fmt.Fprintf(w, "TOTAL\t\t\t%s\t%s\t%s\n",
+		humanBytes(totalIn), humanBytes(totalOut), humanBytes(totalIn+totalOut))
+	if err := w.Flush(); err != nil {
+		return fmt.Errorf("flush table: %w", err)
+	}
+	return nil
+}
+
+// humanBytes formats a byte count with a binary unit suffix.
+func humanBytes(n uint64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%dB", n)
+	}
+	div, exp := uint64(unit), 0
+	for n/div >= unit && exp < 4 {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f%ciB", float64(n)/float64(div), "KMGT"[exp])
 }
 
 // clientConfig prints a ready-to-run client YAML for an existing client,

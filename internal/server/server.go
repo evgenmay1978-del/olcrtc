@@ -85,6 +85,7 @@ type Server struct {
 	cover          muxconn.CoverConfig
 	coverCtx       context.Context //nolint:containedctx // base ctx for per-session cover pacers built off Run's runCtx
 	usage          *accounting.Tracker
+	usageFile      string
 	done           chan struct{}
 	doneOnce       sync.Once
 }
@@ -129,6 +130,10 @@ type Config struct {
 	// MaxStreamsPerSession caps the number of concurrent tunnel streams a
 	// single authorized client (session) may hold. 0 disables the limit.
 	MaxStreamsPerSession int
+
+	// UsageFile, when set, is a path the server periodically writes per-session
+	// usage to (stream and byte counts) for volume billing. Empty disables it.
+	UsageFile string
 
 	// AuthHook is invoked after CLIENT_HELLO to authorize the client and
 	// return a session ID. If nil, every client is admitted with a random UUID.
@@ -185,6 +190,7 @@ func Run(ctx context.Context, cfg Config) error {
 		health:         runtime.NewHealthTracker(cfg.OnHealth),
 		cover:          cfg.Cover,
 		usage:          accounting.New(cfg.MaxStreamsPerSession),
+		usageFile:      cfg.UsageFile,
 		peerSessions:   make(map[string]*peerSession),
 		done:           make(chan struct{}),
 	}
@@ -212,9 +218,41 @@ func Run(ctx context.Context, cfg Config) error {
 		s.closeSession()
 	}()
 
+	if s.usageFile != "" {
+		s.wg.Add(1)
+		go s.flushUsageLoop(runCtx)
+	}
+
 	s.serve(runCtx)
 
 	return nil
+}
+
+// usageFlushInterval is how often the server persists usage to UsageFile.
+const usageFlushInterval = 30 * time.Second
+
+// flushUsageLoop periodically writes the usage snapshot to UsageFile and does
+// a final write when the context is cancelled, so billing data survives a
+// clean shutdown.
+func (s *Server) flushUsageLoop(ctx context.Context) {
+	defer s.wg.Done()
+	ticker := time.NewTicker(usageFlushInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			s.flushUsage()
+			return
+		case <-ticker.C:
+			s.flushUsage()
+		}
+	}
+}
+
+func (s *Server) flushUsage() {
+	if err := accounting.WriteRecords(s.usageFile, s.usage.Records()); err != nil {
+		logger.Warnf("usage flush failed: %v", err)
+	}
 }
 
 func setupCipher(keyHex string) (*crypto.Cipher, error) {
@@ -617,6 +655,7 @@ func (s *Server) acceptHandshake(ctx context.Context, sess *smux.Session) bool {
 	s.sessionID = sid
 	s.sessMu.Unlock()
 	s.recordSession(sid)
+	s.usage.SetDevice(sid, hello.DeviceID)
 	s.onOpen(sid, hello.DeviceID, hello.Claims)
 	logger.Infof("session %s opened (device=%s)", sid, hello.DeviceID)
 	s.startControlLoop(ctx, sess, stream)
@@ -669,6 +708,7 @@ func (s *Server) acceptPeerHandshake(ps *peerSession) bool {
 	ps.deviceID = hello.DeviceID
 	ps.sessionID = sid
 	s.recordSession(sid)
+	s.usage.SetDevice(sid, hello.DeviceID)
 	s.onOpen(sid, hello.DeviceID, hello.Claims)
 	logger.Infof("session %s opened (device=%s peer=%s)", sid, hello.DeviceID, ps.peerID)
 	s.startPeerControlLoop(ps, stream)

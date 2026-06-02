@@ -220,6 +220,9 @@ type Config struct {
 	// MaxStreamsPerClient caps concurrent tunnel streams per authorized client
 	// on the server. 0 disables the limit.
 	MaxStreamsPerClient int
+	// UsageFile, when set on the server, is where per-client traffic usage is
+	// periodically written for volume billing. Empty disables it.
+	UsageFile string
 	// Cover configures cover-traffic obfuscation. Disabled by default; must be
 	// set identically on client and server.
 	CoverEnabled  bool
@@ -742,6 +745,7 @@ func runOnce(
 			Traffic:              traffic,
 			Cover:                cover,
 			MaxStreamsPerSession: cfg.MaxStreamsPerClient,
+			UsageFile:            cfg.UsageFile,
 			AuthHook:             authHook,
 			OnSessionOpen: func(sessionID, deviceID string, claims map[string]any) {
 				logger.Infof("session opened: id=%s device=%s claims=%v", sessionID, deviceID, claims)

@@ -65,6 +65,9 @@ type Access struct {
 	// MaxStreamsPerClient (server) caps concurrent tunnel streams per
 	// authorized client. 0 disables the limit.
 	MaxStreamsPerClient int `yaml:"max_streams_per_client"`
+	// UsageFile (server) is where per-client traffic usage is written for
+	// volume billing. Empty disables usage accounting persistence.
+	UsageFile string `yaml:"usage_file"`
 }
 
 // Cover configures cover-traffic obfuscation. Must match on client and server.
@@ -316,6 +319,7 @@ func Apply(dst session.Config, f File) session.Config {
 	dst.AccessRegistryPath = pickString(dst.AccessRegistryPath, f.Access.ClientsFile)
 	dst.AccessToken = pickString(dst.AccessToken, f.Access.Token)
 	dst.MaxStreamsPerClient = pickInt(dst.MaxStreamsPerClient, f.Access.MaxStreamsPerClient)
+	dst.UsageFile = pickString(dst.UsageFile, f.Access.UsageFile)
 	dst.CoverEnabled = dst.CoverEnabled || f.Cover.Enabled
 	dst.CoverInterval = pickString(dst.CoverInterval, f.Cover.Interval)
 	dst.CoverSize = pickInt(dst.CoverSize, f.Cover.Size)

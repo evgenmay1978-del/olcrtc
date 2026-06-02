@@ -25,6 +25,7 @@ type Tracker struct {
 }
 
 type sessionState struct {
+	deviceID string // device ID seen at handshake, for billing correlation
 	active   int    // currently open streams
 	bytesIn  uint64 // client -> target
 	bytesOut uint64 // target -> client
@@ -106,6 +107,43 @@ func (t *Tracker) AddBytes(sessionID string, bytesIn, bytesOut uint64) {
 	}
 	st.bytesIn += bytesIn
 	st.bytesOut += bytesOut
+}
+
+// SetDevice records the device ID associated with sessionID, for correlating
+// usage to a client at billing time. Safe to call before any bytes/streams.
+func (t *Tracker) SetDevice(sessionID, deviceID string) {
+	if t == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	st := t.state[sessionID]
+	if st == nil {
+		st = &sessionState{}
+		t.state[sessionID] = st
+	}
+	st.deviceID = deviceID
+}
+
+// Records returns the persistable per-session usage, sorted by session ID.
+func (t *Tracker) Records() []Record {
+	if t == nil {
+		return nil
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	out := make([]Record, 0, len(t.state))
+	for id, st := range t.state {
+		out = append(out, Record{
+			SessionID:    id,
+			DeviceID:     st.deviceID,
+			TotalStreams: st.streams,
+			BytesIn:      st.bytesIn,
+			BytesOut:     st.bytesOut,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].SessionID < out[j].SessionID })
+	return out
 }
 
 // Forget drops all accounting for sessionID. Call it when a session ends so a

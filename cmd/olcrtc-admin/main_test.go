@@ -8,10 +8,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/openlibrecommunity/olcrtc/internal/accounting"
 )
 
 const (
 	flagRegistry = "-registry"
+	flagUsage    = "-usage"
 	cmdGrant     = "grant"
 	labelAlice   = "alice"
 )
@@ -144,6 +147,42 @@ func TestRunRotate(t *testing.T) {
 	// Rotating an unknown client errors.
 	if err := run2("rotate", "ghost"); err == nil {
 		t.Fatal("rotate ghost: expected error, got nil")
+	}
+}
+
+func TestRunUsage(t *testing.T) {
+	var out bytes.Buffer
+	// Without -usage: specific error.
+	if err := run([]string{cmdUsage}, &out); !errors.Is(err, errNoUsageFile) {
+		t.Fatalf("usage without file = %v, want errNoUsageFile", err)
+	}
+
+	// Empty/missing file: friendly message, no error.
+	missing := filepath.Join(t.TempDir(), "usage.json")
+	out.Reset()
+	if err := run([]string{flagUsage, missing, cmdUsage}, &out); err != nil {
+		t.Fatalf("usage missing file: %v", err)
+	}
+	if !strings.Contains(out.String(), "no usage recorded") {
+		t.Fatalf("usage missing output = %q", out.String())
+	}
+
+	// Populated file: a row with the session and human bytes appears.
+	path := filepath.Join(t.TempDir(), "usage.json")
+	if err := accounting.WriteRecords(path, []accounting.Record{
+		{SessionID: "sess-1", DeviceID: "dev-1", TotalStreams: 4, BytesIn: 1500000, BytesOut: 0},
+	}); err != nil {
+		t.Fatalf("seed usage: %v", err)
+	}
+	out.Reset()
+	if err := run([]string{flagUsage, path, cmdUsage}, &out); err != nil {
+		t.Fatalf("usage: %v", err)
+	}
+	got := out.String()
+	for _, want := range []string{"sess-1", "dev-1", "MiB", "TOTAL"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("usage output missing %q:\n%s", want, got)
+		}
 	}
 }
 

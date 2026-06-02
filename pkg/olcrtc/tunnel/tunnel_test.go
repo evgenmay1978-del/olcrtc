@@ -41,6 +41,20 @@ func TestRun_PropagatesAuthHook(_ *testing.T) {
 	_ = called
 }
 
+func TestClientRun_FailsWithoutKey(t *testing.T) {
+	tunnel.RegisterDefaults()
+	err := tunnel.NewClient(tunnel.ClientConfig{
+		Transport: "datachannel",
+		Carrier:   "telemost",
+		RoomURL:   "room-1",
+		LocalAddr: "127.0.0.1:0",
+		DNSServer: "8.8.8.8:53",
+	}).Run(context.Background())
+	if err == nil {
+		t.Fatal("client Run(no key) error = nil")
+	}
+}
+
 // Compile-time checks: the public type aliases must be assignable.
 var (
 	_ tunnel.AuthFunc         = func(string, map[string]any) (string, error) { return "", nil }

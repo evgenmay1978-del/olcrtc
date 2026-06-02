@@ -66,6 +66,29 @@ TOTAL                      1.4MiB  8.6MiB  10.0MiB
 Во встраиваемом API (`pkg/olcrtc/tunnel`) те же данные доступны на лету через
 хук `OnTraffic` (на каждый завершённый поток) и снимок `Server.Usage()`.
 
+## Встраиваемый клиент (`pkg/olcrtc/tunnel`)
+
+Для клиентских приложений (например, мобильного olcbox) `tunnel.Client` —
+симметричная пара к `tunnel.Server`: поднимает локальный SOCKS5 и туннелирует
+через тот же carrier. Маскировка и токен доступа задаются прямо в конфиге:
+
+```go
+cli := tunnel.NewClient(tunnel.ClientConfig{
+    Transport:   "datachannel",
+    Carrier:     "jitsi",
+    RoomURL:     "https://meet1.arbitr.ru/myroom",
+    KeyHex:      key,            // совпадает с сервером
+    LocalAddr:   "127.0.0.1:8808",
+    DNSServer:   "8.8.8.8:53",
+    Cover:       tunnel.CoverConfig{Enabled: true, Interval: 20 * time.Millisecond, Size: 128},
+    AccessToken: token,          // выданный админом токен
+})
+if err := cli.Run(ctx); err != nil { /* ... */ }
+```
+
+`Cover` и `KeyHex` должны совпадать с сервером; `AccessToken` уходит в claims
+рукопожатия под ключом `token`.
+
 ## Формат реестра `clients.json`
 
 ```json

@@ -38,8 +38,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/app/session"
 	"github.com/openlibrecommunity/olcrtc/internal/handshake"
+	"github.com/openlibrecommunity/olcrtc/internal/muxconn"
 	"github.com/openlibrecommunity/olcrtc/internal/server"
 	"github.com/openlibrecommunity/olcrtc/internal/transport"
 )
@@ -69,6 +71,24 @@ type SessionCloseFunc = server.SessionCloseFunc
 // bytesIn counts client→target bytes; bytesOut counts target→client bytes.
 type TrafficFunc = server.TrafficFunc
 
+// CoverConfig configures cover-traffic obfuscation. The zero value disables it,
+// leaving the wire format byte-for-byte compatible with the legacy format. Both
+// peers must enable it with matching settings. See docs/cover.md.
+type CoverConfig = muxconn.CoverConfig
+
+// TokenAuthHook returns an [AuthFunc] backed by a JSON client registry at path
+// (the same format olcrtc-admin manages). Clients are authorized by the token
+// they present in claims; expiry and revocation are honored and the file is
+// hot-reloaded on change. Use it to gate an embedded server by paid/free access
+// without writing your own AuthHook.
+func TokenAuthHook(path string) (AuthFunc, error) {
+	reg, err := access.New(path)
+	if err != nil {
+		return nil, fmt.Errorf("tunnel: load access registry: %w", err)
+	}
+	return reg.Authorize, nil
+}
+
 // Config holds runtime server configuration.
 type Config struct {
 	// --- carrier selection ---
@@ -94,6 +114,10 @@ type Config struct {
 	// type from the corresponding internal/transport/* package, or leave nil
 	// for transports that need no extra configuration (datachannel).
 	TransportOptions TransportOptions
+
+	// Cover enables cover-traffic obfuscation. Disabled by default; must match
+	// the client's setting. See docs/cover.md.
+	Cover CoverConfig
 
 	// --- hooks ---
 	// AuthHook authorizes the client. If nil, every client is admitted with a
@@ -134,6 +158,7 @@ func (s *Server) Run(ctx context.Context) error {
 		SOCKSProxyUser:   s.cfg.SOCKSProxyUser,
 		SOCKSProxyPass:   s.cfg.SOCKSProxyPass,
 		TransportOptions: s.cfg.TransportOptions,
+		Cover:            s.cfg.Cover,
 		AuthHook:         s.cfg.AuthHook,
 		OnSessionOpen:    s.cfg.OnSessionOpen,
 		OnSessionClose:   s.cfg.OnSessionClose,

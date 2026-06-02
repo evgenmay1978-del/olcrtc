@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 const flagRegistry = "-registry"
@@ -52,6 +53,36 @@ func TestRunGrantRequestApproveReject(t *testing.T) {
 	mustRun("list")
 	if !strings.Contains(out.String(), "rejected") {
 		t.Fatalf("expected alice rejected: %q", out.String())
+	}
+}
+
+func TestRunPrune(t *testing.T) {
+	reg := filepath.Join(t.TempDir(), "clients.json")
+	var out bytes.Buffer
+	run2 := func(args ...string) error {
+		out.Reset()
+		return run(append([]string{flagRegistry, reg}, args...), &out)
+	}
+
+	// A pending request whose deadline is already in the past (negative-ish:
+	// 1ns). After a brief wait it should be prunable.
+	if err := run2("request", "late", "1ms", "paid-late"); err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	time.Sleep(5 * time.Millisecond)
+	if err := run2("prune"); err != nil {
+		t.Fatalf("prune: %v", err)
+	}
+	if !strings.Contains(out.String(), "auto-rejected") {
+		t.Fatalf("prune output = %q, want auto-rejected", out.String())
+	}
+
+	// Pruning again is a no-op.
+	if err := run2("prune"); err != nil {
+		t.Fatalf("prune again: %v", err)
+	}
+	if !strings.Contains(out.String(), "no expired pending") {
+		t.Fatalf("second prune output = %q", out.String())
 	}
 }
 

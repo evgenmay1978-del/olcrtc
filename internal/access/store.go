@@ -113,6 +113,23 @@ func (s *Store) SetDisabled(label string, disabled bool) error {
 	return nil
 }
 
+// PruneExpiredPending auto-rejects pending clients whose payment deadline
+// (Expires) has passed, so stale unpaid signups don't linger as pending
+// forever. It returns the labels that were rejected. A pending client with no
+// Expires is left untouched (no deadline set).
+func (s *Store) PruneExpiredPending() []string {
+	now := s.now()
+	var rejected []string
+	for i := range s.clients {
+		c := &s.clients[i]
+		if c.Status == StatusPending && !c.Expires.IsZero() && now.After(c.Expires) {
+			c.Status = StatusRejected
+			rejected = append(rejected, c.Label)
+		}
+	}
+	return rejected
+}
+
 // Remove deletes a client by label.
 func (s *Store) Remove(label string) error {
 	i := s.findByLabel(label)

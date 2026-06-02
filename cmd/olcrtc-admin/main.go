@@ -13,12 +13,14 @@
 //
 //	list                              show all clients and their status
 //	grant   <label> [ttl] [contact]   create an ACTIVE client (free access)
-//	request <label> [contact]         create a PENDING client (awaiting payment approval)
+//	request <label> [deadline] [contact]  create a PENDING client (awaiting payment;
+//	                                        deadline auto-rejects via `prune`)
 //	approve <label> [ttl]             activate a pending client (payment confirmed)
 //	reject  <label>                   reject a pending client (payment not received)
 //	revoke  <label>                   disable an existing client
 //	enable  <label>                   re-enable a disabled client
 //	remove  <label>                   delete a client
+//	prune                             auto-reject pending requests past their deadline
 //	pay                               print payment instructions (from -pay-info file)
 //
 // ttl is a Go duration like 720h (30 days). Omit for no expiry.
@@ -40,7 +42,7 @@ const cmdPay = "pay"
 
 // errUsage signals a usage problem; main prints it without a stack.
 var errUsage = errors.New("usage: olcrtc-admin -registry <clients.json> <command> [args] " +
-	"(commands: list, grant, request, approve, reject, revoke, enable, remove, pay)")
+	"(commands: list, grant, request, approve, reject, revoke, enable, remove, prune, pay)")
 
 // printf writes formatted output, ignoring write errors (stdout to a terminal
 // or pipe; a failed write here is not actionable).
@@ -87,27 +89,31 @@ func run(args []string, out io.Writer) error {
 	return dispatch(cmd, store, cmdArgs, out)
 }
 
+// commandFunc handles one admin subcommand.
+type commandFunc func(store *access.Store, args []string, out io.Writer) error
+
+// commands maps subcommand names to handlers. Wrapping the fixed-arity helpers
+// keeps dispatch a simple table lookup (no large switch).
+//
+//nolint:gochecknoglobals // immutable command table, initialized once
+var commands = map[string]commandFunc{
+	"list":    func(s *access.Store, _ []string, o io.Writer) error { return listClients(s, o) },
+	"grant":   grant,
+	"request": request,
+	"approve": approve,
+	"reject":  func(s *access.Store, a []string, o io.Writer) error { return setStatus(s, a, access.StatusRejected, o) },
+	"revoke":  func(s *access.Store, a []string, o io.Writer) error { return setDisabled(s, a, true, o) },
+	"enable":  func(s *access.Store, a []string, o io.Writer) error { return setDisabled(s, a, false, o) },
+	"remove":  remove,
+	"prune":   func(s *access.Store, _ []string, o io.Writer) error { return prune(s, o) },
+}
+
 func dispatch(cmd string, store *access.Store, args []string, out io.Writer) error {
-	switch cmd {
-	case "list":
-		return listClients(store, out)
-	case "grant":
-		return grant(store, args, out)
-	case "request":
-		return request(store, args, out)
-	case "approve":
-		return approve(store, args, out)
-	case "reject":
-		return setStatus(store, args, access.StatusRejected, out)
-	case "revoke":
-		return setDisabled(store, args, true, out)
-	case "enable":
-		return setDisabled(store, args, false, out)
-	case "remove":
-		return remove(store, args, out)
-	default:
+	handler, ok := commands[cmd]
+	if !ok {
 		return fmt.Errorf("%w: unknown command %q", errUsage, cmd)
 	}
+	return handler(store, args, out)
 }
 
 // parseFlags pulls -registry and -pay-info out of args, returning the rest as
@@ -184,11 +190,10 @@ func request(store *access.Store, args []string, out io.Writer) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: request", errMissingLabel)
 	}
-	var contact string
-	if len(args) > 1 {
-		contact = args[1]
-	}
-	token, err := store.Add(args[0], contact, access.StatusPending, 0)
+	// Optional [deadline] [contact]: a duration sets a payment deadline after
+	// which `prune` auto-rejects the unpaid request; anything else is contact.
+	deadline, contact := parseTTLAndContact(args[1:])
+	token, err := store.Add(args[0], contact, access.StatusPending, deadline)
 	if err != nil {
 		return fmt.Errorf("add client: %w", err)
 	}
@@ -196,6 +201,21 @@ func request(store *access.Store, args []string, out io.Writer) error {
 		return fmt.Errorf("save registry: %w", err)
 	}
 	printf(out, "created pending client %q (awaiting payment approval)\ntoken: %s\n", args[0], token)
+	return nil
+}
+
+func prune(store *access.Store, out io.Writer) error {
+	rejected := store.PruneExpiredPending()
+	if len(rejected) == 0 {
+		writeLine(out, "no expired pending requests")
+		return nil
+	}
+	if err := store.Save(); err != nil {
+		return fmt.Errorf("save registry: %w", err)
+	}
+	for _, label := range rejected {
+		printf(out, "auto-rejected expired pending %q\n", label)
+	}
 	return nil
 }
 

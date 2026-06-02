@@ -113,6 +113,43 @@ func TestStoreRemoveAndDisable(t *testing.T) {
 	}
 }
 
+func TestPruneExpiredPending(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "clients.json")
+	base := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
+	s, _ := OpenStore(path)
+	s.now = func() time.Time { return base }
+
+	// Pending with a 1h deadline, plus a far-future one, a no-deadline one,
+	// and an active client.
+	tokExpired, _ := s.Add("late", "", StatusPending, time.Hour)
+	tokFuture, _ := s.Add("ontime", "", StatusPending, 100*time.Hour)
+	_, _ = s.Add("nodeadline", "", StatusPending, 0)
+	_, _ = s.Add("paid", "", StatusActive, 0)
+
+	// Advance the clock past the first deadline but not the second.
+	s.now = func() time.Time { return base.Add(2 * time.Hour) }
+	rejected := s.PruneExpiredPending()
+	if len(rejected) != 1 || rejected[0] != "late" {
+		t.Fatalf("pruned = %v, want [late]", rejected)
+	}
+	if err := s.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	r, err := New(path)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	// Pruned one is now rejected -> denied.
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: tokExpired}); !errors.Is(err, ErrAccessDenied) {
+		t.Fatalf("pruned client error = %v, want ErrAccessDenied", err)
+	}
+	// Future-deadline one is still pending.
+	if _, err := r.Authorize("d", map[string]any{ClaimToken: tokFuture}); !errors.Is(err, ErrAccessPending) {
+		t.Fatalf("future pending error = %v, want ErrAccessPending", err)
+	}
+}
+
 func TestClientsSortedByLabel(t *testing.T) {
 	s, _ := OpenStore(filepath.Join(t.TempDir(), "c.json"))
 	_, _ = s.Add("zoe", "", StatusActive, 0)

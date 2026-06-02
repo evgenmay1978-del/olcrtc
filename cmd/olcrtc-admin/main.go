@@ -21,6 +21,8 @@
 //	enable  <label>                   re-enable a disabled client
 //	remove  <label>                   delete a client
 //	prune                             auto-reject pending requests past their deadline
+//	client-config <label> -server <server.yaml>
+//	                                  print a ready-to-run client YAML for the client
 //	pay                               print payment instructions (from -pay-info file)
 //
 // ttl is a Go duration like 720h (30 days). Omit for no expiry.
@@ -35,6 +37,7 @@ import (
 	"time"
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
+	"github.com/openlibrecommunity/olcrtc/internal/config"
 )
 
 // cmdPay is the only command that needs no registry.
@@ -42,7 +45,7 @@ const cmdPay = "pay"
 
 // errUsage signals a usage problem; main prints it without a stack.
 var errUsage = errors.New("usage: olcrtc-admin -registry <clients.json> <command> [args] " +
-	"(commands: list, grant, request, approve, reject, revoke, enable, remove, prune, pay)")
+	"(commands: list, grant, request, approve, reject, revoke, enable, remove, prune, client-config, pay)")
 
 // printf writes formatted output, ignoring write errors (stdout to a terminal
 // or pipe; a failed write here is not actionable).
@@ -67,24 +70,36 @@ func main() {
 	}
 }
 
+// cmdClientConfig generates a ready-to-run client YAML for an existing client.
+const cmdClientConfig = "client-config"
+
+// errNoServerConfig is returned when client-config is run without -server.
+var errNoServerConfig = errors.New("client-config: pass -server <server.yaml> to mint a matching client config")
+
 func run(args []string, out io.Writer) error {
-	registry, payInfo, rest := parseFlags(args)
-	if len(rest) == 0 {
+	flags := parseFlags(args)
+	if len(flags.rest) == 0 {
 		return errUsage
 	}
-	cmd, cmdArgs := rest[0], rest[1:]
+	cmd, cmdArgs := flags.rest[0], flags.rest[1:]
 
 	// pay only prints instructions; it needs no registry.
 	if cmd == cmdPay {
-		return printPayInfo(payInfo, out)
+		return printPayInfo(flags.payInfo, out)
 	}
-	if registry == "" {
+	if flags.registry == "" {
 		return errUsage
 	}
 
-	store, err := access.OpenStore(registry)
+	store, err := access.OpenStore(flags.registry)
 	if err != nil {
 		return fmt.Errorf("open registry: %w", err)
+	}
+
+	// client-config needs the server YAML too, so it is handled here rather
+	// than via the fixed-arity command table.
+	if cmd == cmdClientConfig {
+		return clientConfig(store, flags.server, cmdArgs, out)
 	}
 	return dispatch(cmd, store, cmdArgs, out)
 }
@@ -116,32 +131,68 @@ func dispatch(cmd string, store *access.Store, args []string, out io.Writer) err
 	return handler(store, args, out)
 }
 
-// parseFlags pulls -registry and -pay-info out of args, returning the rest as
-// the positional command + args. A tiny hand-rolled parser keeps the flags
-// usable in any position without pulling in the flag package's global state.
-func parseFlags(args []string) (string, string, []string) {
-	var (
-		registry string
-		payInfo  string
-		rest     []string
-	)
+// adminFlags holds the parsed -registry/-pay-info/-server flags plus the
+// remaining positional command and its arguments.
+type adminFlags struct {
+	registry string
+	payInfo  string
+	server   string
+	rest     []string
+}
+
+// parseFlags pulls the named flags out of args, returning the rest as the
+// positional command + args. A tiny hand-rolled parser keeps the flags usable
+// in any position without pulling in the flag package's global state.
+func parseFlags(args []string) adminFlags {
+	var f adminFlags
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-registry", "--registry":
 			if i+1 < len(args) {
-				registry = args[i+1]
+				f.registry = args[i+1]
 				i++
 			}
 		case "-pay-info", "--pay-info":
 			if i+1 < len(args) {
-				payInfo = args[i+1]
+				f.payInfo = args[i+1]
+				i++
+			}
+		case "-server", "--server":
+			if i+1 < len(args) {
+				f.server = args[i+1]
 				i++
 			}
 		default:
-			rest = append(rest, args[i])
+			f.rest = append(f.rest, args[i])
 		}
 	}
-	return registry, payInfo, rest
+	return f
+}
+
+// clientConfig prints a ready-to-run client YAML for an existing client,
+// minted from the server config so the two ends are guaranteed compatible.
+func clientConfig(store *access.Store, serverPath string, args []string, out io.Writer) error {
+	if len(args) == 0 {
+		return fmt.Errorf("%w: client-config", errMissingLabel)
+	}
+	if serverPath == "" {
+		return errNoServerConfig
+	}
+	c, ok := store.Lookup(args[0])
+	if !ok {
+		return fmt.Errorf("%w: %q", access.ErrClientNotFound, args[0])
+	}
+	server, err := config.Load(serverPath)
+	if err != nil {
+		return fmt.Errorf("load server config: %w", err)
+	}
+	yamlBytes, err := config.GenerateClientConfig(server, c.Token)
+	if err != nil {
+		return fmt.Errorf("generate client config: %w", err)
+	}
+	printf(out, "# olcrtc client config for %q — save as client.yaml and run: olcrtc client.yaml\n", c.Label)
+	_, _ = out.Write(yamlBytes)
+	return nil
 }
 
 func listClients(store *access.Store, out io.Writer) error {

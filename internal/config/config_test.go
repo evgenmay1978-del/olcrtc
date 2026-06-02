@@ -91,7 +91,7 @@ func requireAppliedConfig(t *testing.T, got session.Config) {
 		Auth:                  testAuthProvider,
 		RoomID:                testRoomID,
 		KeyHex:                testCryptoKey,
-		Transport:             "datachannel",
+		Transport:             testTransportDC,
 		DNSServer:             testDNSServer,
 		SOCKSHost:             "127.0.0.1",
 		SOCKSPort:             1080,
@@ -114,7 +114,7 @@ func requireAppliedConfig(t *testing.T, got session.Config) {
 
 func TestApplyCLIWins(t *testing.T) {
 	cli := session.Config{
-		Mode:      "cnc",
+		Mode:      testModeCNC,
 		KeyHex:    "from-cli",
 		SOCKSPort: 9999,
 	}
@@ -124,7 +124,7 @@ func TestApplyCLIWins(t *testing.T) {
 		SOCKS:  SOCKS{Port: 1234, Host: "0.0.0.0"},
 	}
 	got := Apply(cli, f)
-	if got.Mode != "cnc" {
+	if got.Mode != testModeCNC {
 		t.Errorf("Mode: got %q, want cnc (CLI wins)", got.Mode)
 	}
 	if got.KeyHex != "from-cli" {
@@ -211,11 +211,11 @@ failover:
 	if first.KeyHex != "shared-key" || first.DNSServer != testDNSServer || first.VP8.FPS != 30 ||
 		first.LivenessInterval != "1s" || first.LivenessTimeout != "2s" || first.LivenessFailures != 5 ||
 		first.MaxSessionDuration != "30m" || first.TrafficMaxPayloadSize != 4096 ||
-		first.TrafficMinDelay != "10ms" || first.TrafficMaxDelay != "20ms" {
+		first.TrafficMinDelay != "10ms" || first.TrafficMaxDelay != testDelay20ms {
 		t.Fatalf("first inherited/overlaid fields = %+v", first)
 	}
 	second := ApplyProfile(base, f.Profiles[1])
-	if second.Auth != "jitsi" || second.Transport != "datachannel" ||
+	if second.Auth != testProviderJits || second.Transport != testTransportDC ||
 		second.RoomID != "https://meet.example/room" || second.DNSServer != testDNSServer {
 		t.Fatalf("second profile = %+v", second)
 	}

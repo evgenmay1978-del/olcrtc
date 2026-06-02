@@ -138,9 +138,10 @@ func (r *memoryRoom) connectedCount() int {
 	return count
 }
 
-func (r *memoryRoom) waitConnected(t *testing.T, want int) {
+func (r *memoryRoom) waitConnected(t *testing.T) {
 	t.Helper()
 
+	const want = 1
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
 		if r.connectedCount() >= want {
@@ -1049,7 +1050,7 @@ func startTunnel(t *testing.T) *tunnelRuntime {
 			DNSServer: localDNSServer,
 		})
 	}()
-	room.waitConnected(t, 1)
+	room.waitConnected(t)
 
 	ready := make(chan struct{})
 	clientErr := make(chan error, 1)
@@ -1518,7 +1519,7 @@ func TestSupervisorFailoverProfilesReachWorkingSOCKS(t *testing.T) {
 	go func() {
 		serverErr <- supervisor.Run(ctx, failoverE2EConfig(serverProfiles, started, "server"), session.Run)
 	}()
-	room.waitConnected(t, 1)
+	room.waitConnected(t)
 
 	ready := make(chan struct{})
 	var readyOnce sync.Once

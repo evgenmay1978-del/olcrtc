@@ -55,6 +55,16 @@ func (s *Store) Clients() []Client {
 	return out
 }
 
+// Lookup returns a copy of the client with the given label and whether it was
+// found.
+func (s *Store) Lookup(label string) (Client, bool) {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return Client{}, false
+	}
+	return s.clients[i], true
+}
+
 // findByLabel returns the index of the client with the given label, or -1.
 func (s *Store) findByLabel(label string) int {
 	for i := range s.clients {

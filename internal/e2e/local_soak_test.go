@@ -229,7 +229,7 @@ func startLocalSoakTunnel(t *testing.T, transportName string) *tunnelRuntime {
 			DNSServer:        localDNSServer,
 		})
 	}()
-	room.waitConnected(t, 1)
+	room.waitConnected(t)
 
 	ready := make(chan struct{})
 	clientErr := make(chan error, 1)

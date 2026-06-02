@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
-const flagRegistry = "-registry"
+const (
+	flagRegistry = "-registry"
+	cmdGrant     = "grant"
+	labelAlice   = "alice"
+)
 
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
@@ -32,7 +36,7 @@ func TestRunGrantRequestApproveReject(t *testing.T) {
 		}
 	}
 
-	mustRun("grant", "alice", "720h", "free")
+	mustRun(cmdGrant, labelAlice, "720h", "free")
 	if !strings.Contains(out.String(), "granted active access") {
 		t.Fatalf("grant output = %q", out.String())
 	}
@@ -44,12 +48,12 @@ func TestRunGrantRequestApproveReject(t *testing.T) {
 
 	mustRun("list")
 	listing := out.String()
-	if !strings.Contains(listing, "alice") || !strings.Contains(listing, "bob") {
+	if !strings.Contains(listing, labelAlice) || !strings.Contains(listing, "bob") {
 		t.Fatalf("list missing clients: %q", listing)
 	}
 
 	mustRun("approve", "bob", "720h")
-	mustRun("reject", "alice")
+	mustRun("reject", labelAlice)
 	mustRun("list")
 	if !strings.Contains(out.String(), "rejected") {
 		t.Fatalf("expected alice rejected: %q", out.String())
@@ -86,6 +90,39 @@ func TestRunPrune(t *testing.T) {
 	}
 }
 
+func TestRunClientConfig(t *testing.T) {
+	dir := t.TempDir()
+	reg := filepath.Join(dir, "clients.json")
+	srv := filepath.Join(dir, "server.yaml")
+	writeFile(t, srv, "mode: srv\nauth: {provider: jitsi}\n"+
+		"room: {id: \"https://meet1.arbitr.ru/x\"}\n"+
+		"crypto: {key: \"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff\"}\n"+
+		"net: {transport: datachannel, dns: \"8.8.8.8:53\"}\n"+
+		"cover: {enabled: true, interval: 20ms, size: 128}\ndata: data\n")
+
+	var out bytes.Buffer
+	if err := run([]string{flagRegistry, reg, cmdGrant, labelAlice, "720h"}, &out); err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+
+	out.Reset()
+	if err := run([]string{flagRegistry, reg, "-server", srv, "client-config", labelAlice}, &out); err != nil {
+		t.Fatalf("client-config: %v", err)
+	}
+	got := out.String()
+	for _, want := range []string{"mode: cnc", "token:", "datachannel", "enabled: true"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("client-config output missing %q:\n%s", want, got)
+		}
+	}
+
+	// Without -server it must error clearly.
+	out.Reset()
+	if err := run([]string{flagRegistry, reg, "client-config", labelAlice}, &out); !errors.Is(err, errNoServerConfig) {
+		t.Fatalf("client-config without -server = %v, want errNoServerConfig", err)
+	}
+}
+
 func TestRunUsageErrors(t *testing.T) {
 	var out bytes.Buffer
 	if err := run(nil, &out); !errors.Is(err, errUsage) {
@@ -93,7 +130,7 @@ func TestRunUsageErrors(t *testing.T) {
 	}
 	// A registry command with no label is rejected.
 	reg := filepath.Join(t.TempDir(), "c.json")
-	if err := run([]string{flagRegistry, reg, "grant"}, &out); !errors.Is(err, errMissingLabel) {
+	if err := run([]string{flagRegistry, reg, cmdGrant}, &out); !errors.Is(err, errMissingLabel) {
 		t.Fatalf("grant without label = %v, want errMissingLabel", err)
 	}
 }

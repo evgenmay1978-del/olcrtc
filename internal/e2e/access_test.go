@@ -67,7 +67,7 @@ func startGatedTunnel(
 			AuthHook:  reg.Authorize,
 		})
 	}()
-	room.waitConnected(t, 1)
+	room.waitConnected(t)
 
 	clientErr := make(chan error, 1)
 	ready := make(chan struct{})

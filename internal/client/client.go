@@ -103,6 +103,13 @@ type Config struct {
 	// the server's AuthHook. Free-form key/value bag for plan, user, region, etc.
 	Claims map[string]any
 
+	// RetryInitialConnect, when true, keeps retrying the first connection with
+	// exponential backoff instead of failing on the first error. Use it for
+	// standalone clients (e.g. mobile) where the carrier may not accept the
+	// first connect. Leave false when a supervisor handles failover, so a dead
+	// profile fails fast and the supervisor can switch.
+	RetryInitialConnect bool
+
 	// OnHealth receives liveness/reconnect status updates. Nil means no-op.
 	OnHealth HealthFunc
 }
@@ -151,7 +158,11 @@ func RunWithReady(ctx context.Context, cfg Config, onReady func()) error {
 	// that bringUpLink hadn't populated yet.
 	defer c.shutdown()
 
-	if err := c.bringUpLink(runCtx, cfg, cancel); err != nil {
+	if cfg.RetryInitialConnect {
+		if err := c.bringUpLinkWithRetry(runCtx, cfg, cancel); err != nil {
+			return err
+		}
+	} else if err := c.bringUpLink(runCtx, cfg, cancel); err != nil {
 		return err
 	}
 
@@ -172,6 +183,57 @@ func RunWithReady(ctx context.Context, cfg Config, onReady func()) error {
 
 	<-runCtx.Done()
 	return nil
+}
+
+// Initial-connect retry pacing. WebRTC/ICE against public SFUs (especially on
+// mobile networks) does not always succeed on the first attempt, so the client
+// retries the initial link bring-up with exponential backoff instead of giving
+// up. This only covers the first connection; once a session is established,
+// reconnection is handled by the carrier reconnect callbacks.
+//nolint:gochecknoglobals // tests shorten initial-connect backoff to run fast
+var (
+	initialConnectBaseDelay = 2 * time.Second
+	initialConnectMaxDelay  = 30 * time.Second
+)
+
+// bringUpLinkWithRetry keeps attempting the initial connection until it
+// succeeds or ctx is cancelled, backing off exponentially between attempts.
+// Each failed attempt is torn down via shutdown so a partial link does not
+// leak (and does not linger as a ghost participant in the room) before the
+// next try.
+func (c *Client) bringUpLinkWithRetry(ctx context.Context, cfg Config, cancel context.CancelFunc) error {
+	delay := initialConnectBaseDelay
+	for attempt := 1; ; attempt++ {
+		err := c.bringUpLink(ctx, cfg, cancel)
+		if err == nil {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return fmt.Errorf("connect cancelled: %w", ctx.Err())
+		}
+		logger.Warnf("initial connect attempt %d failed: %v; retrying in %s", attempt, err, delay)
+		c.shutdown()
+		c.resetLinkPeer()
+
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("connect cancelled: %w", ctx.Err())
+		case <-time.After(delay):
+		}
+		if delay < initialConnectMaxDelay {
+			delay *= 2
+			if delay > initialConnectMaxDelay {
+				delay = initialConnectMaxDelay
+			}
+		}
+	}
+}
+
+// SetInitialConnectBackoffForTest overrides the initial-connect retry pacing.
+// It exists so tests can exercise the retry loop without waiting seconds.
+func SetInitialConnectBackoffForTest(base, maxDelay time.Duration) {
+	initialConnectBaseDelay = base
+	initialConnectMaxDelay = maxDelay
 }
 
 func (c *Client) bringUpLink(

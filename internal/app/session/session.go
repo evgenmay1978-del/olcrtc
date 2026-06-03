@@ -228,6 +228,10 @@ type Config struct {
 	CoverEnabled  bool
 	CoverInterval string
 	CoverSize     int
+	// RetryInitialConnect, when true (client mode), keeps retrying the first
+	// connection with backoff. Set for standalone clients; left false under a
+	// supervisor, which does its own failover.
+	RetryInitialConnect bool
 }
 
 // RegisterDefaults registers built-in carriers and transports.
@@ -777,8 +781,9 @@ func runOnce(
 			Token:            cfg.Token,
 			Liveness:         liveness,
 			Traffic:          traffic,
-			Cover:            cover,
-			Claims:           accessClaims(cfg.AccessToken),
+			Cover:               cover,
+			Claims:              accessClaims(cfg.AccessToken),
+			RetryInitialConnect: cfg.RetryInitialConnect,
 		}); err != nil {
 			return fmt.Errorf("client: %w", err)
 		}

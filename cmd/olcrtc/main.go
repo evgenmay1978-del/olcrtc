@@ -170,6 +170,12 @@ func prepareProfiles(profiles []supervisor.Profile) ([]supervisor.Profile, error
 }
 
 func runSessionMode(dataDir string, scfg session.Config) error {
+	// Standalone (no failover supervisor): retry the initial connection so a
+	// client whose first connect is refused by the carrier keeps trying
+	// instead of exiting. Under a supervisor this stays off so dead profiles
+	// fail fast and the supervisor can switch profiles.
+	scfg.RetryInitialConnect = true
+
 	if err := session.Validate(scfg); err != nil {
 		return fmt.Errorf("validate config: %w", err)
 	}

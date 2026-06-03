@@ -1,0 +1,46 @@
+# Web panel for managing client access (create / set days / disable / rotate /
+# delete). Runs the olcrtc-panel binary from the same image as the server and
+# shares the same client registry volume, so changes apply without a restart.
+#
+# Security: the panel is published ONLY on the host loopback (127.0.0.1:8090),
+# never on a public interface. Reach it over an SSH tunnel:
+#
+#   ssh -L 8090:127.0.0.1:8090 root@YOUR_SERVER
+#   # then open http://127.0.0.1:8090  (user: admin)
+#
+# Start it (after the server image is built):
+#
+#   OLCRTC_PANEL_PASSWORD='strong-password' \
+#     docker compose -f docker-compose.server.yml -f docker-compose.panel.yml up -d
+#
+# It reuses the olcrtc-state volume from docker-compose.server.yml, so the panel
+# edits the very same clients.json the server reads.
+
+services:
+  olcrtc-panel:
+    image: olcrtc/server:local
+    build:
+      context: .
+    container_name: olcrtc-panel
+    restart: unless-stopped
+    # Bind to host loopback only. Do NOT change to 0.0.0.0 — that would expose
+    # the panel to the internet. Use the SSH tunnel above instead.
+    ports:
+      - "127.0.0.1:8090:8090"
+    environment:
+      # Required: the panel refuses to start without a password.
+      OLCRTC_PANEL_PASSWORD: "${OLCRTC_PANEL_PASSWORD:?set OLCRTC_PANEL_PASSWORD to a strong password}"
+      # Optional: defaults to "admin".
+      OLCRTC_PANEL_USER: "${OLCRTC_PANEL_USER:-admin}"
+    entrypoint: ["/usr/local/bin/olcrtc-panel"]
+    command:
+      - "-registry"
+      - "/var/lib/olcrtc/clients.json"
+      - "-addr"
+      - "0.0.0.0:8090"
+    volumes:
+      - olcrtc-state:/var/lib/olcrtc
+    init: true
+
+volumes:
+  olcrtc-state:

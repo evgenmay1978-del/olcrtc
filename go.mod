@@ -1,6 +1,6 @@
 module github.com/openlibrecommunity/olcrtc
 
-go 1.26.3
+go 1.26.4
 
 require (
 	codeberg.org/rape4me/kc v0.0.0-20260527074346-4cb2a45790c2

@@ -28,6 +28,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w" -o /out/olcrtc-admin ./cmd/olcrtc-admin
 
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath -ldflags="-s -w" -o /out/olcrtc-panel ./cmd/olcrtc-panel
+
 FROM alpine:${ALPINE_VERSION} AS runtime
 
 RUN apk add --no-cache ca-certificates ffmpeg tzdata && \
@@ -39,10 +44,11 @@ RUN apk add --no-cache ca-certificates ffmpeg tzdata && \
 COPY --chown=olcrtc:olcrtc data /usr/share/olcrtc
 COPY --from=build /out/olcrtc /usr/local/bin/olcrtc
 COPY --from=build /out/olcrtc-admin /usr/local/bin/olcrtc-admin
+COPY --from=build /out/olcrtc-panel /usr/local/bin/olcrtc-panel
 COPY script/docker/olcrtc-entrypoint.sh /usr/local/bin/olcrtc-entrypoint
 COPY script/docker/olcrtc-healthcheck.sh /usr/local/bin/olcrtc-healthcheck
 
-RUN chmod 0755 /usr/local/bin/olcrtc /usr/local/bin/olcrtc-admin \
+RUN chmod 0755 /usr/local/bin/olcrtc /usr/local/bin/olcrtc-admin /usr/local/bin/olcrtc-panel \
     /usr/local/bin/olcrtc-entrypoint /usr/local/bin/olcrtc-healthcheck
 
 USER olcrtc:olcrtc

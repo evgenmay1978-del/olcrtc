@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>olcRTC — client panel</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; background: #0d1117; color: #e6edf3; }
+  header { padding: 16px 24px; background: #161b22; border-bottom: 1px solid #30363d; }
+  h1 { font-size: 18px; margin: 0; }
+  main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+  .notice { background: #1f6feb22; border: 1px solid #1f6feb; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; word-break: break-all; }
+  .err { background: #f8514922; border-color: #f85149; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #30363d; vertical-align: middle; }
+  th { color: #8b949e; font-weight: 600; font-size: 13px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+  .active { background: #2ea04333; color: #3fb950; }
+  .pending { background: #d2992233; color: #d29922; }
+  .rejected, .disabled { background: #f8514933; color: #f85149; }
+  form.inline { display: inline; }
+  input, button { font: inherit; }
+  input[type=text], input[type=number] { background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; padding: 6px 8px; }
+  input[type=number] { width: 80px; }
+  button { background: #21262d; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: #8b949e; }
+  button.danger { color: #f85149; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  label.field { display: flex; flex-direction: column; font-size: 12px; color: #8b949e; gap: 4px; }
+  code { background: #0d1117; padding: 1px 5px; border-radius: 4px; font-size: 12px; word-break: break-all; }
+  .muted { color: #8b949e; font-size: 12px; }
+</style>
+</head>
+<body>
+<header><h1>olcRTC — панель клиентов</h1></header>
+<main>
+  {{if .Notice}}<div class="notice {{if .IsErr}}err{{end}}">{{.Notice}}</div>{{end}}
+
+  <div class="card">
+    <h2>Создать клиента</h2>
+    <form class="row" method="post" action="/create">
+      <label class="field">Имя (label)<input type="text" name="label" required placeholder="alice"></label>
+      <label class="field">Дней (0 = бессрочно)<input type="number" name="days" min="0" value="30"></label>
+      <label class="field">Заметка / телефон<input type="text" name="contact" placeholder="оплата ...6564"></label>
+      <button type="submit">Создать</button>
+    </form>
+    <p class="muted">Токен показывается один раз после создания — скопируй и передай клиенту.</p>
+  </div>
+
+  <div class="card">
+    <h2>Клиенты ({{len .Clients}})</h2>
+    <table>
+      <tr><th>Имя</th><th>Статус</th><th>Истекает</th><th>Осталось</th><th>Заметка</th><th>Действия</th></tr>
+      {{range .Clients}}
+      <tr>
+        <td>{{.Label}}</td>
+        <td>
+          {{if .Disabled}}<span class="tag disabled">отключён</span>
+          {{else}}<span class="tag {{.Status}}">{{.Status}}</span>{{end}}
+        </td>
+        <td>{{.Expires}}</td>
+        <td>{{.DaysLeft}}</td>
+        <td class="muted">{{.Contact}}</td>
+        <td>
+          <form class="inline" method="post" action="/extend">
+            <input type="hidden" name="label" value="{{.Label}}">
+            <input type="number" name="days" min="0" value="30" title="дней с сейчас">
+            <button type="submit" title="Продлить/активировать на N дней">Продлить</button>
+          </form>
+          {{if .Disabled}}
+          <form class="inline" method="post" action="/enable"><input type="hidden" name="label" value="{{.Label}}"><button type="submit">Включить</button></form>
+          {{else}}
+          <form class="inline" method="post" action="/disable"><input type="hidden" name="label" value="{{.Label}}"><button type="submit">Отключить</button></form>
+          {{end}}
+          <form class="inline" method="post" action="/rotate"><input type="hidden" name="label" value="{{.Label}}"><button type="submit" title="Перевыпустить токен">Сменить токен</button></form>
+          <form class="inline" method="post" action="/delete" onsubmit="return confirm('Удалить {{.Label}}?')"><input type="hidden" name="label" value="{{.Label}}"><button type="submit" class="danger">Удалить</button></form>
+        </td>
+      </tr>
+      {{else}}
+      <tr><td colspan="6" class="muted">Пока нет клиентов.</td></tr>
+      {{end}}
+    </table>
+  </div>
+  <p class="muted">Источник данных: реестр клиентов. Изменения применяются сервером без перезапуска.</p>
+</main>
+</body>
+</html>

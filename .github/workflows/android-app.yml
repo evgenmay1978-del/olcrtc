@@ -1,0 +1,94 @@
+name: Build Android App (debug APK)
+
+# Builds the vendored olcbox client (app/) into a debug APK, compiling the
+# olcrtc Go sources from this repo root into the Android AAR via gomobile.
+# Runs on changes under app/ or mobile/ so Kotlin/binding changes are verified.
+# The artifact is an unsigned debug APK for testing (no signing secrets needed).
+
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "app/**"
+      - "mobile/**"
+      - ".github/workflows/android-app.yml"
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "app/**"
+      - "mobile/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_NDK_VERSION: "28.2.13676358"
+
+jobs:
+  build-apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android NDK
+        run: sdkmanager "platforms;android-37" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install gomobile
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install golang.org/x/mobile/cmd/gomobile@latest
+
+      - name: Initialize gomobile
+        run: |
+          export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+          export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
+          gomobile init
+
+      - name: Build debug APK
+        working-directory: app
+        run: |
+          export OLCRTC_REPO="${{ github.workspace }}"
+          export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+          export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
+          ./gradlew \
+            -Polcbox.version="0.0.0-ci" \
+            -Polcbox.versionCode="1" \
+            -Polcbox.android.abiFilters=armeabi-v7a \
+            :sharedUI:jvmTest :androidApp:assembleDebug --stacktrace
+
+      - name: Collect APK
+        working-directory: app
+        run: |
+          mkdir -p dist
+          apk="$(find androidApp/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | sort | head -n 1)"
+          if [ -z "$apk" ]; then
+            echo "debug APK not found" >&2
+            exit 1
+          fi
+          cp "$apk" "dist/olcbox-debug.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: olcbox-debug-apk
+          path: app/dist/olcbox-debug.apk

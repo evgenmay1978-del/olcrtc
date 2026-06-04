@@ -108,6 +108,28 @@ func TestDefaultsAndSetters(t *testing.T) {
 	}
 }
 
+func TestSetAccessTokenAndClaims(t *testing.T) {
+	resetMobileGlobals(t)
+
+	// No token -> no claims (open server path).
+	if got := accessClaims(""); got != nil {
+		t.Fatalf("accessClaims(\"\") = %v, want nil", got)
+	}
+
+	// Token trimmed and stored, surfaced as the handshake claim.
+	SetAccessToken("  secret-token  ")
+	mu.Lock()
+	stored := defaults.accessToken
+	mu.Unlock()
+	if stored != "secret-token" {
+		t.Fatalf("stored token = %q, want trimmed secret-token", stored)
+	}
+	claims := accessClaims(stored)
+	if claims["token"] != "secret-token" {
+		t.Fatalf("claims token = %v, want secret-token", claims["token"])
+	}
+}
+
 func TestNormalizeBuildRoomAndClamp(t *testing.T) {
 	tests := map[string]string{
 		"datachannel": dataTransport,

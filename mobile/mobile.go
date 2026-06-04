@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/app/session"
 	"github.com/openlibrecommunity/olcrtc/internal/client"
 	"github.com/openlibrecommunity/olcrtc/internal/control"
@@ -84,6 +85,7 @@ type mobileConfig struct {
 	transport        string
 	dnsServer        string
 	socksListenHost  string
+	accessToken      string
 	vp8FPS           int
 	vp8BatchSize     int
 	livenessInterval time.Duration
@@ -139,6 +141,27 @@ func SetSocksListenHost(host string) {
 	defer mu.Unlock()
 	ensureDefaultConfigLocked()
 	defaults.socksListenHost = normalizeSocksListenHost(host)
+}
+
+// SetAccessToken sets the access token presented to a token-gated server. The
+// token is sent in the handshake claims so the server can authorize this
+// client (paid/free access). Leave empty for open servers that gate only on
+// the encryption key.
+func SetAccessToken(token string) {
+	mu.Lock()
+	defer mu.Unlock()
+	ensureDefaultConfigLocked()
+	defaults.accessToken = strings.TrimSpace(token)
+}
+
+// accessClaims builds the handshake claims for the client. When an access token
+// is set it is sent under access.ClaimToken so a token-gated server authorizes
+// the client; otherwise no claims are sent (open servers keep working).
+func accessClaims(token string) map[string]any {
+	if token == "" {
+		return nil
+	}
+	return map[string]any{access.ClaimToken: token}
 }
 
 // SetVP8Options configures vp8channel.
@@ -594,7 +617,9 @@ func startWithConfig(
 					FPS:       cfg.vp8FPS,
 					BatchSize: cfg.vp8BatchSize,
 				},
-				Liveness: livenessConfig(cfg),
+				Liveness:            livenessConfig(cfg),
+				Claims:              accessClaims(cfg.accessToken),
+				RetryInitialConnect: true,
 			},
 			func() {
 				readyOnce.Do(func() {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/config"
+	"github.com/openlibrecommunity/olcrtc/internal/notify"
 )
 
 // errBadDays is returned when the days form field is not a non-negative integer.
@@ -24,6 +25,8 @@ type server struct {
 	user         string
 	password     string
 	serverConfig string // path to the server YAML, for generating client configs
+	payInfo      string // payment instructions shown to clients (phone, etc.)
+	notifier     *notify.Telegram
 	mu           sync.Mutex
 }
 
@@ -41,6 +44,13 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/rotate", s.requireAuth(s.handleRotate))
 	mux.HandleFunc("/delete", s.requireAuth(s.handleDelete))
 	mux.HandleFunc("/config", s.requireAuth(s.handleConfig))
+
+	// Public client-facing payment API (no basic auth): the Android app calls
+	// these to list tariffs, sign up, and report payment.
+	mux.HandleFunc("/api/tariffs", s.handleAPITariffs)
+	mux.HandleFunc("/api/signup", s.handleAPISignup)
+	mux.HandleFunc("/api/paid", s.handleAPIPaid)
+	mux.HandleFunc("/api/status", s.handleAPIStatus)
 	return mux
 }
 

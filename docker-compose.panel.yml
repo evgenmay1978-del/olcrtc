@@ -32,6 +32,12 @@ services:
       OLCRTC_PANEL_PASSWORD: "${OLCRTC_PANEL_PASSWORD:?set OLCRTC_PANEL_PASSWORD to a strong password}"
       # Optional: defaults to "admin".
       OLCRTC_PANEL_USER: "${OLCRTC_PANEL_USER:-admin}"
+      # Payment flow (for the in-app signup API). Shown to clients on signup.
+      OLCRTC_PAY_INFO: "${OLCRTC_PAY_INFO:-}"
+      # Telegram notifications for "I paid" claims (optional). Without these the
+      # claim still appears as a pending client in the panel.
+      OLCRTC_TELEGRAM_TOKEN: "${OLCRTC_TELEGRAM_TOKEN:-}"
+      OLCRTC_TELEGRAM_CHAT_ID: "${OLCRTC_TELEGRAM_CHAT_ID:-}"
     entrypoint: ["/usr/local/bin/olcrtc-panel"]
     command:
       - "-registry"

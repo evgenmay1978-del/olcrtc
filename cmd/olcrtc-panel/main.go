@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/openlibrecommunity/olcrtc/internal/notify"
 )
 
 const (
@@ -79,6 +81,11 @@ func run() error {
 
 	srv := newServer(registry, user, password)
 	srv.serverConfig = serverConfig
+	srv.payInfo = os.Getenv("OLCRTC_PAY_INFO")
+	srv.notifier = notify.NewTelegram(
+		os.Getenv("OLCRTC_TELEGRAM_TOKEN"),
+		os.Getenv("OLCRTC_TELEGRAM_CHAT_ID"),
+	)
 	httpSrv := &http.Server{
 		Addr:         addr,
 		Handler:      srv.routes(),

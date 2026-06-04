@@ -49,6 +49,11 @@ services:
     volumes:
       - olcrtc-state:/var/lib/olcrtc
     init: true
+    # The image's HEALTHCHECK pidof-checks the `olcrtc` server process, which
+    # does not run in the panel container, so it would always report unhealthy.
+    # Disable it here; the panel's liveness is its HTTP endpoint.
+    healthcheck:
+      disable: true
 
 volumes:
   olcrtc-state:

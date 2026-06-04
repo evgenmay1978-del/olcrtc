@@ -205,4 +205,12 @@ esac
 
 [ -n "$ffmpeg" ] && printf 'ffmpeg: "%s"\n' "$ffmpeg" >> "$config"
 
+# In server mode, publish a copy of the generated config into the state volume
+# so the web panel (a separate container sharing the volume) can read it to
+# generate per-client configs. Best-effort: failure to copy must not stop the
+# server.
+if [ "$mode" = "srv" ]; then
+    cp "$config" /var/lib/olcrtc/server.generated.yaml 2>/dev/null || true
+fi
+
 exec /usr/local/bin/olcrtc "$config"

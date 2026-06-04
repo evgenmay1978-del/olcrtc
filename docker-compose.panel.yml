@@ -36,6 +36,8 @@ services:
     command:
       - "-registry"
       - "/var/lib/olcrtc/clients.json"
+      - "-server"
+      - "/var/lib/olcrtc/server.generated.yaml"
       - "-addr"
       - "0.0.0.0:8090"
     volumes:

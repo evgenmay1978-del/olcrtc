@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -125,6 +126,56 @@ func TestPanelCreateRejectsEmptyLabel(t *testing.T) {
 	}
 	if !strings.Contains(rec.Header().Get("Location"), "err=") {
 		t.Fatalf("empty-label should redirect with err=, got %q", rec.Header().Get("Location"))
+	}
+}
+
+func TestPanelConfigDownload(t *testing.T) {
+	dir := t.TempDir()
+	reg := filepath.Join(dir, "clients.json")
+	srvCfg := filepath.Join(dir, "server.yaml")
+	cfgYAML := "mode: srv\nauth: {provider: jitsi}\n" +
+		"room: {id: \"https://meet1.arbitr.ru/x\"}\n" +
+		"crypto: {key: \"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff\"}\n" +
+		"net: {transport: datachannel, dns: \"8.8.8.8:53\"}\ndata: data\n"
+	if err := os.WriteFile(srvCfg, []byte(cfgYAML), 0o600); err != nil {
+		t.Fatalf("write server config: %v", err)
+	}
+
+	s := newServer(reg, "admin", "secret")
+	s.serverConfig = srvCfg
+
+	// Create a client, then download its config.
+	if rec := doPost(t, s, "/create", url.Values{fieldLabel: {labelAlice}, fieldDays: {"30"}}); rec.Code != http.StatusOK {
+		t.Fatalf("create status = %d", rec.Code)
+	}
+
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/config?label="+labelAlice, nil)
+	req.SetBasicAuth("admin", "secret")
+	rec := httptest.NewRecorder()
+	s.routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("config status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"mode: cnc", "access:", "token:", "datachannel"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("config body missing %q:\n%s", want, body)
+		}
+	}
+	if cd := rec.Header().Get("Content-Disposition"); !strings.Contains(cd, "client-alice.yaml") {
+		t.Fatalf("Content-Disposition = %q", cd)
+	}
+}
+
+func TestPanelConfigWithoutServerFlag(t *testing.T) {
+	s := newServer(filepath.Join(t.TempDir(), "c.json"), "admin", "secret")
+	// serverConfig left empty.
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/config?label=x", nil)
+	req.SetBasicAuth("admin", "secret")
+	rec := httptest.NewRecorder()
+	s.routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("config without -server status = %d, want 503", rec.Code)
 	}
 }
 

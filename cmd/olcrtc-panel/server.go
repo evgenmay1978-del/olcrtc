@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
+	"github.com/openlibrecommunity/olcrtc/internal/config"
 )
 
 // errBadDays is returned when the days form field is not a non-negative integer.
@@ -19,10 +20,11 @@ var errBadDays = errors.New("days must be a whole number >= 0")
 // mu: each request opens the registry file, mutates, and saves, so the file
 // stays the single source of truth shared with the server and the CLI.
 type server struct {
-	registry string
-	user     string
-	password string
-	mu       sync.Mutex
+	registry     string
+	user         string
+	password     string
+	serverConfig string // path to the server YAML, for generating client configs
+	mu           sync.Mutex
 }
 
 func newServer(registry, user, password string) *server {
@@ -38,7 +40,52 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/extend", s.requireAuth(s.handleExtend))
 	mux.HandleFunc("/rotate", s.requireAuth(s.handleRotate))
 	mux.HandleFunc("/delete", s.requireAuth(s.handleDelete))
+	mux.HandleFunc("/config", s.requireAuth(s.handleConfig))
 	return mux
+}
+
+// handleConfig serves a ready-to-run client YAML for the given label, built
+// from the server config so the two ends match. The client's access token is
+// embedded. Served as a download (client-<label>.yaml).
+func (s *server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	if s.serverConfig == "" {
+		http.Error(w, "client config generation is not enabled: start the panel with -server <server.yaml>",
+			http.StatusServiceUnavailable)
+		return
+	}
+	label := r.URL.Query().Get("label")
+	if label == "" {
+		http.Error(w, "label is required", http.StatusBadRequest)
+		return
+	}
+
+	var token string
+	err := s.withStore(false, func(st *access.Store) error {
+		c, ok := st.Lookup(label)
+		if !ok {
+			return fmt.Errorf("%w: %q", access.ErrClientNotFound, label)
+		}
+		token = c.Token
+		return nil
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	serverCfg, err := config.Load(s.serverConfig)
+	if err != nil {
+		http.Error(w, "load server config: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	yamlBytes, err := config.GenerateClientConfig(serverCfg, token)
+	if err != nil {
+		http.Error(w, "generate client config: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/x-yaml; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"client-%s.yaml\"", label))
+	_, _ = w.Write(yamlBytes)
 }
 
 // withStore runs fn against a freshly opened registry under the panel lock,

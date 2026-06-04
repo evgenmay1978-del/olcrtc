@@ -25,6 +25,8 @@
   button { background: #21262d; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
   button:hover { border-color: #8b949e; }
   button.danger { color: #f85149; }
+  a.btn { display: inline-block; background: #238636; border: 1px solid #2ea043; color: #fff; border-radius: 6px; padding: 6px 10px; text-decoration: none; }
+  a.btn:hover { background: #2ea043; }
   .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
   .card h2 { font-size: 15px; margin: 0 0 12px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
@@ -74,6 +76,7 @@
           {{else}}
           <form class="inline" method="post" action="/disable"><input type="hidden" name="label" value="{{.Label}}"><button type="submit">Отключить</button></form>
           {{end}}
+          <a class="btn" href="/config?label={{.Label}}" title="Скачать готовый client.yaml для olcbox">Конфиг</a>
           <form class="inline" method="post" action="/rotate"><input type="hidden" name="label" value="{{.Label}}"><button type="submit" title="Перевыпустить токен">Сменить токен</button></form>
           <form class="inline" method="post" action="/delete" onsubmit="return confirm('Удалить {{.Label}}?')"><input type="hidden" name="label" value="{{.Label}}"><button type="submit" class="danger">Удалить</button></form>
         </td>

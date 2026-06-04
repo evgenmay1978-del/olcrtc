@@ -40,24 +40,33 @@ func main() {
 	}
 }
 
-func run() error {
-	addr := defaultAddr
-	registry := defaultRegistry
-	args := os.Args[1:]
+// flags holds the panel's parsed command-line options.
+type flags struct {
+	addr         string
+	registry     string
+	serverConfig string
+}
+
+// parseArgs reads -addr/-registry/-server, falling back to defaults.
+func parseArgs(args []string) flags {
+	f := flags{addr: defaultAddr, registry: defaultRegistry}
+	targets := map[string]*string{
+		"-addr": &f.addr, "--addr": &f.addr,
+		"-registry": &f.registry, "--registry": &f.registry,
+		"-server": &f.serverConfig, "--server": &f.serverConfig,
+	}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-addr", "--addr":
-			if i+1 < len(args) {
-				addr = args[i+1]
-				i++
-			}
-		case "-registry", "--registry":
-			if i+1 < len(args) {
-				registry = args[i+1]
-				i++
-			}
+		if dst, ok := targets[args[i]]; ok && i+1 < len(args) {
+			*dst = args[i+1]
+			i++
 		}
 	}
+	return f
+}
+
+func run() error {
+	f := parseArgs(os.Args[1:])
+	addr, registry, serverConfig := f.addr, f.registry, f.serverConfig
 
 	password := os.Getenv("OLCRTC_PANEL_PASSWORD")
 	if password == "" {
@@ -69,6 +78,7 @@ func run() error {
 	}
 
 	srv := newServer(registry, user, password)
+	srv.serverConfig = serverConfig
 	httpSrv := &http.Server{
 		Addr:         addr,
 		Handler:      srv.routes(),

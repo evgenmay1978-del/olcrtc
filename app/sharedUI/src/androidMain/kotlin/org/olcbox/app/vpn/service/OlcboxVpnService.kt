@@ -662,6 +662,9 @@ class OlcboxVpnService : VpnService() {
         Mobile.setDNS("1.1.1.1:53")
         Mobile.setSocksListenHost(socksListenHost)
         Mobile.setVP8Options(config.vp8Fps.toLong(), config.vp8Batch.toLong())
+        // Present the access token to a token-gated server (paid/free access).
+        // Empty is a no-op, so open servers keep working.
+        Mobile.setAccessToken(config.token)
     }
 
     private fun startTun2socks(pfd: ParcelFileDescriptor): Boolean {

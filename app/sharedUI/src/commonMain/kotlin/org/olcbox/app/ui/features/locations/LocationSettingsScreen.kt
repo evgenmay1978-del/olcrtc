@@ -254,6 +254,22 @@ fun LocationSettingsScreen(
                     leadingIcon = Icons.Rounded.Key,
                     onClear = { viewModel.onPasswordChanged("") },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+            }
+
+            item {
+                SettingsTextField(
+                    value = config.token,
+                    onValueChange = viewModel::onTokenChanged,
+                    label = "Access token (optional)",
+                    placeholder = "leave empty for open servers",
+                    enabled = !isSaving,
+                    isError = false,
+                    supportingText = null,
+                    leadingIcon = Icons.Rounded.Key,
+                    onClear = { viewModel.onTokenChanged("") },
+                    visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                 )
             }

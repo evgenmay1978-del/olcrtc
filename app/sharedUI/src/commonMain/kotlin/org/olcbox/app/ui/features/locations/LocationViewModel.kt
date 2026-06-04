@@ -374,6 +374,10 @@ class LocationViewModel(
         validateKey(value)
     }
 
+    fun onTokenChanged(value: String) {
+        editingConfig = editingConfig.copy(token = value)
+    }
+
     fun onBypassProviderChanged(value: String) {
         val provider = LocationConfig.normalizeProvider(value)
         val currentProvider = LocationConfig.normalizeProvider(editingConfig.bypassProvider)

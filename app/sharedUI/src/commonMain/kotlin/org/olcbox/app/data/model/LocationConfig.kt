@@ -19,6 +19,7 @@ data class LocationConfig(
     val name: String = "",
     val id: String = "",
     val key: String = "",
+    val token: String = "",
     @SerialName("bypass_provider")
     val bypassProvider: String = DEFAULT_BYPASS_PROVIDER,
     val transport: String = DEFAULT_TRANSPORT,
@@ -34,6 +35,7 @@ data class LocationConfig(
             name = name.trim(),
             id = id.trim(),
             key = key.trim(),
+            token = token.trim(),
             bypassProvider = provider,
             transport = normalizedTransport,
             vp8Fps = sanitizeVp8Fps(vp8Fps),
@@ -235,6 +237,7 @@ data class LocationEndpointConfig(
     @SerialName("room_id")
     val roomId: String = "",
     val key: String = "",
+    val token: String = "",
     @SerialName("client_id")
     val legacyClientId: String? = null
 )
@@ -388,6 +391,7 @@ data class LocationEntry(
                 name = name,
                 id = firstNotBlank(endpoint?.roomId, legacyId, legacyRoomId, legacyServer),
                 key = firstNotBlank(endpoint?.key, legacyKey, legacyPassword),
+                token = endpoint?.token.orEmpty(),
                 bypassProvider = provider,
                 transport = transportConfig.type,
                 vp8Fps = vp8Options?.fps
@@ -412,7 +416,8 @@ data class LocationEntry(
             subscriptionUrl = firstNotBlank(subscriptionUrl, legacySubscriptionUrl).ifBlank { null },
             endpoint = LocationEndpointConfig(
                 roomId = config.id,
-                key = config.key
+                key = config.key,
+                token = config.token
             ),
             authProvider = config.bypassProvider,
             transport = LocationTransportConfig.from(config),
@@ -436,7 +441,8 @@ data class LocationEntry(
                 subscriptionUrl = subscriptionUrl,
                 endpoint = LocationEndpointConfig(
                     roomId = config.id,
-                    key = config.key
+                    key = config.key,
+                    token = config.token
                 ),
                 authProvider = config.bypassProvider,
                 transport = LocationTransportConfig.from(config),

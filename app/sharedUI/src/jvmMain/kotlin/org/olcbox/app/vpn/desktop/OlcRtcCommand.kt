@@ -29,6 +29,10 @@ internal data class OlcRtcCommand(
             appendLine("  id: ${config.id.yamlValue()}")
             appendLine("crypto:")
             appendLine("  key: ${config.key.yamlValue()}")
+            if (config.token.isNotBlank()) {
+                appendLine("access:")
+                appendLine("  token: ${config.token.yamlValue()}")
+            }
             appendLine("net:")
             appendLine("  transport: ${config.transport.yamlValue()}")
             appendLine("  dns: \"1.1.1.1:53\"")

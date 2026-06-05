@@ -23,15 +23,17 @@ data class LocationConfig(
     val name: String = "",
     val id: String = "",
     val key: String = "",
-    @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val token: String = "",
     @SerialName("bypass_provider")
     val bypassProvider: String = DEFAULT_BYPASS_PROVIDER,
     val transport: String = DEFAULT_TRANSPORT,
     @SerialName("vp8_fps")
     val vp8Fps: Int = DEFAULT_VP8_FPS,
     @SerialName("vp8_batch")
-    val vp8Batch: Int = DEFAULT_VP8_BATCH
+    val vp8Batch: Int = DEFAULT_VP8_BATCH,
+    // Placed last so existing positional constructor calls (name, id, key,
+    // provider, ...) are unaffected. Not serialized when empty.
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val token: String = ""
 ) {
     fun normalized(): LocationConfig {
         val provider = normalizeProvider(bypassProvider)
@@ -242,12 +244,12 @@ data class LocationEndpointConfig(
     @SerialName("room_id")
     val roomId: String = "",
     val key: String = "",
-    // Only serialize the token when set, so existing configs/exports are
+    @SerialName("client_id")
+    val legacyClientId: String? = null,
+    // Placed last; only serialized when set, so existing configs/exports stay
     // byte-identical when no token is in use.
     @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val token: String = "",
-    @SerialName("client_id")
-    val legacyClientId: String? = null
+    val token: String = ""
 )
 
 @Serializable

@@ -47,8 +47,13 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install Android NDK
-        run: sdkmanager "platforms;android-37" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+      - name: Install Android SDK packages
+        # Mirror the upstream olcbox CI: install the SDK platform, build-tools,
+        # and NDK that are known to build this project. The compileSdk (37)
+        # platform is auto-provisioned by the Android Gradle Plugin.
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

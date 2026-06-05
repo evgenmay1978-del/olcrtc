@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package org.olcbox.app.data.model
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,6 +23,7 @@ data class LocationConfig(
     val name: String = "",
     val id: String = "",
     val key: String = "",
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
     val token: String = "",
     @SerialName("bypass_provider")
     val bypassProvider: String = DEFAULT_BYPASS_PROVIDER,
@@ -237,6 +242,9 @@ data class LocationEndpointConfig(
     @SerialName("room_id")
     val roomId: String = "",
     val key: String = "",
+    // Only serialize the token when set, so existing configs/exports are
+    // byte-identical when no token is in use.
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
     val token: String = "",
     @SerialName("client_id")
     val legacyClientId: String? = null

@@ -180,6 +180,7 @@ jobs:
         # The 9 cross-compiled binaries are large; only retain them for pushes
         # to the default branch to stay within the artifact storage quota.
         if: github.event_name == 'push'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: olcrtc-cli-binaries
@@ -217,6 +218,7 @@ jobs:
         run: mage mobile
 
       - name: Upload Android Artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: olcrtc-android

@@ -26,7 +26,7 @@ class PaymentApiTest {
 
     @Test
     fun parsesTariffs() = runTest {
-        val api = PaymentApi(
+        val api = HttpPaymentApi(
             "http://panel",
             client { _ ->
                 HttpStatusCode.OK to """{"tariffs":[
@@ -43,7 +43,7 @@ class PaymentApiTest {
 
     @Test
     fun signupReturnsPayInfo() = runTest {
-        val api = PaymentApi(
+        val api = HttpPaymentApi(
             "http://panel",
             client { _ ->
                 HttpStatusCode.OK to """{"login":"maria","tariff":{"id":"3m","months":3,"priceRub":1100,"title":"3 месяца"},"payInfo":"pay to +7...","message":"transfer 1100"}"""
@@ -57,12 +57,12 @@ class PaymentApiTest {
 
     @Test
     fun statusReportsPendingThenActive() = runTest {
-        val pending = PaymentApi("http://panel", client { _ ->
+        val pending = HttpPaymentApi("http://panel", client { _ ->
             HttpStatusCode.OK to """{"status":"pending","expires":"2026-09-02"}"""
         })
         assertEquals(StatusResponse.STATUS_PENDING, pending.status("maria").status)
 
-        val active = PaymentApi("http://panel", client { _ ->
+        val active = HttpPaymentApi("http://panel", client { _ ->
             HttpStatusCode.OK to """{"status":"active","expires":"2026-09-02","token":"abc123"}"""
         })
         val s = active.status("maria")
@@ -72,7 +72,7 @@ class PaymentApiTest {
 
     @Test
     fun nonSuccessStatusThrows() = runTest {
-        val api = PaymentApi("http://panel", client { _ ->
+        val api = HttpPaymentApi("http://panel", client { _ ->
             HttpStatusCode.Conflict to """{"error":"login already exists"}"""
         })
         assertFailsWith<PaymentException> { api.signup("taken", "1m") }

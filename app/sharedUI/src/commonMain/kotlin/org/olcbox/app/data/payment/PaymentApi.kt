@@ -23,24 +23,32 @@ private data class PaidRequest(val login: String)
 /** Thrown when a payment API call fails. */
 class PaymentException(message: String) : Exception(message)
 
+/** Client-facing payment operations, abstracted for testability. */
+interface PaymentApi {
+    suspend fun tariffs(): List<Tariff>
+    suspend fun signup(login: String, tariffId: String): SignupResponse
+    suspend fun markPaid(login: String)
+    suspend fun status(login: String): StatusResponse
+}
+
 /**
- * PaymentApi talks to the olcRTC server's client-facing payment endpoints
+ * HttpPaymentApi talks to the olcRTC server's client-facing payment endpoints
  * (/api/tariffs, /api/signup, /api/paid, /api/status). baseUrl is the panel's
  * address, e.g. "https://panel.example.com" or "http://10.0.2.2:8090".
  *
  * The API is intentionally small and stateless; callers poll status to sync.
  */
-class PaymentApi(
+class HttpPaymentApi(
     private val baseUrl: String,
     private val httpClient: HttpClient,
     private val json: Json = defaultJson
-) {
-    suspend fun tariffs(): List<Tariff> {
+) : PaymentApi {
+    override suspend fun tariffs(): List<Tariff> {
         val text = getText("/api/tariffs")
         return json.decodeFromString(TariffsResponse.serializer(), text).tariffs
     }
 
-    suspend fun signup(login: String, tariffId: String): SignupResponse {
+    override suspend fun signup(login: String, tariffId: String): SignupResponse {
         val body = json.encodeToString(
             SignupRequest.serializer(),
             SignupRequest(login = login, tariff = tariffId)
@@ -50,12 +58,12 @@ class PaymentApi(
     }
 
     /** Reports that the client paid; the operator is notified to approve. */
-    suspend fun markPaid(login: String) {
+    override suspend fun markPaid(login: String) {
         val body = json.encodeToString(PaidRequest.serializer(), PaidRequest(login = login))
         postJson("/api/paid", body)
     }
 
-    suspend fun status(login: String): StatusResponse {
+    override suspend fun status(login: String): StatusResponse {
         val text = getText("/api/status?login=" + login.encodeURLParameter())
         return json.decodeFromString(StatusResponse.serializer(), text)
     }

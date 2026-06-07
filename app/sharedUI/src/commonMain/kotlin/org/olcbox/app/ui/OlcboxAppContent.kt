@@ -15,6 +15,8 @@ import org.olcbox.app.ui.features.home.HomeScreen
 import org.olcbox.app.ui.features.home.HomeScreenViewModel
 import org.olcbox.app.ui.features.locations.LocationSettingsScreen
 import org.olcbox.app.ui.features.locations.LocationViewModel
+import org.olcbox.app.ui.features.payment.PaymentScreen
+import org.olcbox.app.ui.features.payment.PaymentViewModel
 import org.olcbox.app.ui.navigation.AppScreen
 
 @Composable
@@ -34,7 +36,11 @@ fun OlcboxAppContent(
     showSplitTunnelingButton: Boolean = false,
     canScanQr: Boolean = false,
     onAppSettingsClick: () -> Unit,
-    onSplitTunnelingClick: () -> Unit = {}
+    onSplitTunnelingClick: () -> Unit = {},
+    paymentViewModel: PaymentViewModel? = null,
+    panelUrl: String = "",
+    onPanelUrlChange: (String) -> Unit = {},
+    onSubscriptionActivated: (token: String) -> Unit = {}
 ) {
     val homeScrollState = rememberScrollState()
 
@@ -105,6 +111,16 @@ fun OlcboxAppContent(
                         homeViewModel.loadCurrentConfig()
                         onNavigate(AppScreen.Home)
                     }
+                )
+            }
+
+            AppScreen.Subscription -> {
+                PaymentScreen(
+                    viewModel = paymentViewModel,
+                    panelUrl = panelUrl,
+                    onPanelUrlChange = onPanelUrlChange,
+                    onBack = { onNavigate(AppScreen.Home) },
+                    onActivated = onSubscriptionActivated
                 )
             }
         }

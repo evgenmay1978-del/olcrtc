@@ -1,6 +1,7 @@
 package org.olcbox.app.ui.activities
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.net.VpnService
@@ -32,8 +33,10 @@ import org.olcbox.app.update.isUpdateCheckDue
 import org.olcbox.app.update.shouldShowOffer
 import org.olcbox.app.ui.OlcboxAppContent
 import org.olcbox.app.ui.components.ApplicationUpdateOfferSheet
+import org.olcbox.app.data.payment.createPaymentApi
 import org.olcbox.app.ui.features.home.HomeScreenViewModel
 import org.olcbox.app.ui.features.locations.LocationViewModel
+import org.olcbox.app.ui.features.payment.PaymentViewModel
 import org.olcbox.app.ui.navigation.AppScreen
 import org.olcbox.app.vpn.AndroidConnectionMode
 import org.olcbox.app.vpn.AndroidSplitTunnelList
@@ -54,6 +57,7 @@ fun AndroidMainScreen(
     val currentScreen: AppScreen =
         when (currentScreenRoute) {
             "location_settings" -> AppScreen.LocationSettings(currentLocationId)
+            "subscription" -> AppScreen.Subscription
             else -> AppScreen.Home
         }
 
@@ -67,11 +71,23 @@ fun AndroidMainScreen(
                 currentScreenRoute = "location_settings"
                 currentLocationId = screen.locationId
             }
+            AppScreen.Subscription -> {
+                currentScreenRoute = "subscription"
+            }
         }
     }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val paymentPrefs = remember(context) {
+        context.getSharedPreferences("olcbox_payment", Context.MODE_PRIVATE)
+    }
+    var panelBaseUrl by rememberSaveable {
+        mutableStateOf(paymentPrefs.getString("panel_url", "").orEmpty())
+    }
+    val paymentViewModel = remember(panelBaseUrl) {
+        createPaymentApi(panelBaseUrl)?.let { PaymentViewModel(it) }
+    }
     val connectionMode by vpnManager.connectionMode.collectAsState()
     val proxySettings by vpnManager.proxySettings.collectAsState()
     val splitTunnelSettings by vpnManager.splitTunnelSettings.collectAsState()
@@ -327,6 +343,10 @@ fun AndroidMainScreen(
         navigateHomeFromLocationSettings()
     }
 
+    BackHandler(enabled = currentScreen is AppScreen.Subscription) {
+        navigate(AppScreen.Home)
+    }
+
     OlcboxAppContent(
         homeViewModel = viewModel,
         locationViewModel = locationViewModel,
@@ -381,6 +401,15 @@ fun AndroidMainScreen(
             appSettingsInitialRoute = AppSettingsInitialRoute.SplitTunneling
             vpnManager.refreshInstalledApps()
             isAppSettingsOpen = true
+        },
+        paymentViewModel = paymentViewModel,
+        panelUrl = panelBaseUrl,
+        onPanelUrlChange = { url ->
+            panelBaseUrl = url
+            paymentPrefs.edit().putString("panel_url", url).apply()
+        },
+        onSubscriptionActivated = { token ->
+            Toast.makeText(context, "Доступ активен", Toast.LENGTH_LONG).show()
         }
     )
 
@@ -502,6 +531,10 @@ fun AndroidMainScreen(
             onSplitTunnelAppsSelected = { list: AndroidSplitTunnelList, packages: Set<String> ->
                 vpnManager.setSplitTunnelApps(list, packages)
                 markSplitTunnelChanged()
+            },
+            onSubscriptionClick = {
+                isAppSettingsOpen = false
+                navigate(AppScreen.Subscription)
             }
         )
     }

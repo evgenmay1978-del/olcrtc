@@ -2,6 +2,7 @@ package org.olcbox.app.ui.features.payment
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -53,7 +54,8 @@ data class PaymentState(
  * "I paid" (notifies the operator) -> poll status until active or rejected.
  */
 class PaymentViewModel(
-    private val api: PaymentApi
+    private val api: PaymentApi,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PaymentState())
@@ -67,7 +69,7 @@ class PaymentViewModel(
     fun loadTariffs() {
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { api.tariffs() } }
+            runCatching { withContext(ioDispatcher) { api.tariffs() } }
                 .onSuccess { tariffs -> _state.update { it.copy(loading = false, tariffs = tariffs) } }
                 .onFailure { e -> _state.update { it.copy(loading = false, error = e.message ?: "load failed") } }
         }
@@ -82,7 +84,7 @@ class PaymentViewModel(
         }
         _state.update { it.copy(loading = true, error = null, selectedTariff = tariff) }
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { api.signup(login, tariff.id) } }
+            runCatching { withContext(ioDispatcher) { api.signup(login, tariff.id) } }
                 .onSuccess { resp -> applySignup(resp) }
                 .onFailure { e -> _state.update { it.copy(loading = false, error = e.message ?: "signup failed") } }
         }
@@ -104,7 +106,7 @@ class PaymentViewModel(
         val login = _state.value.login.trim()
         _state.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { api.markPaid(login) } }
+            runCatching { withContext(ioDispatcher) { api.markPaid(login) } }
                 .onSuccess {
                     _state.update { it.copy(loading = false, step = PaymentStep.PendingApproval) }
                     pollStatus()
@@ -119,7 +121,7 @@ class PaymentViewModel(
         if (login.isEmpty()) return
         viewModelScope.launch {
             repeat(POLL_ATTEMPTS) {
-                val resp = runCatching { withContext(Dispatchers.IO) { api.status(login) } }.getOrNull()
+                val resp = runCatching { withContext(ioDispatcher) { api.status(login) } }.getOrNull()
                 if (resp != null && applyStatus(resp)) return@launch
                 delay(POLL_INTERVAL_MS)
             }

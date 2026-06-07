@@ -65,6 +65,13 @@ class PaymentViewModel(
         _state.update { it.copy(login = value, error = null) }
     }
 
+    /** Returns to tariff selection, keeping the entered login. */
+    fun reset() {
+        _state.update {
+            PaymentState(login = it.login, tariffs = it.tariffs)
+        }
+    }
+
     /** Loads the tariff catalog for the picker. */
     fun loadTariffs() {
         _state.update { it.copy(loading = true, error = null) }

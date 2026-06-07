@@ -51,6 +51,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Key
@@ -143,7 +144,8 @@ internal fun AppSettingsSheet(
     onProxyPasswordRegenerated: () -> Unit,
     onSplitTunnelModeSelected: (AndroidSplitTunnelMode) -> Unit,
     onSplitTunnelAppToggled: (AndroidSplitTunnelList, String) -> Unit,
-    onSplitTunnelAppsSelected: (AndroidSplitTunnelList, Set<String>) -> Unit
+    onSplitTunnelAppsSelected: (AndroidSplitTunnelList, Set<String>) -> Unit,
+    onSubscriptionClick: () -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -221,7 +223,8 @@ internal fun AppSettingsSheet(
                     onConnectionSettingsClick = { route = AppSettingsRoute.ConnectionSettings },
                     onSubscriptionsSharingClick = { route = AppSettingsRoute.SubscriptionsSharing },
                     onUpdatesClick = { route = AppSettingsRoute.Updates },
-                    onApplicationLogsClick = { route = AppSettingsRoute.ApplicationLogs }
+                    onApplicationLogsClick = { route = AppSettingsRoute.ApplicationLogs },
+                    onSubscriptionClick = { closeSheet(); onSubscriptionClick() }
                 )
 
                 AppSettingsRoute.ConnectionSettings -> ConnectionSettingsContent(
@@ -319,7 +322,8 @@ private fun AppSettingsHubContent(
     onConnectionSettingsClick: () -> Unit,
     onSubscriptionsSharingClick: () -> Unit,
     onUpdatesClick: () -> Unit,
-    onApplicationLogsClick: () -> Unit
+    onApplicationLogsClick: () -> Unit,
+    onSubscriptionClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -347,6 +351,14 @@ private fun AppSettingsHubContent(
             checked = dynamicThemeEnabled,
             enabled = true,
             onCheckedChange = onDynamicThemeChanged
+        )
+
+        SettingsNavigationRow(
+            title = "Подписка",
+            value = "Тарифы, оплата и активация доступа",
+            icon = Icons.Outlined.Star,
+            enabled = true,
+            onClick = onSubscriptionClick
         )
 
         SettingsNavigationRow(

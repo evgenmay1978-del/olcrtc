@@ -97,3 +97,4 @@ jobs:
         with:
           name: olcbox-debug-apk
           path: app/dist/olcbox-debug.apk
+          retention-days: 7

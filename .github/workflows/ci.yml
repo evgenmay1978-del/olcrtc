@@ -177,10 +177,14 @@ jobs:
         run: mage cross
 
       - name: Upload CLI Artifacts
+        # The 9 cross-compiled binaries are large; only retain them for pushes
+        # to the default branch to stay within the artifact storage quota.
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: olcrtc-cli-binaries
           path: build/
+          retention-days: 7
 
   build-android:
     name: Build Android (AAR)
@@ -217,6 +221,7 @@ jobs:
         with:
           name: olcrtc-android
           path: build/olcrtc.aar
+          retention-days: 7
 
   nightly-soak:
     name: Nightly Soak (All Carriers × Transports)

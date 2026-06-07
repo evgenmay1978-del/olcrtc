@@ -1,6 +1,7 @@
 package org.olcbox.app.ui.features.payment
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -29,21 +30,24 @@ private class FakePaymentApi(
     override suspend fun status(login: String) = statusValue
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PaymentViewModelTest {
-    @BeforeTest fun setUp() = Dispatchers.setMain(StandardTestDispatcher())
+    private val testDispatcher = StandardTestDispatcher()
+
+    @BeforeTest fun setUp() = Dispatchers.setMain(testDispatcher)
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun loadsTariffs() = runTest {
-        val vm = PaymentViewModel(FakePaymentApi())
+    fun loadsTariffs() = runTest(testDispatcher) {
+        val vm = PaymentViewModel(FakePaymentApi(), testDispatcher)
         vm.loadTariffs()
         advanceUntilIdle()
         assertEquals(2, vm.state.value.tariffs.size)
     }
 
     @Test
-    fun signupRequiresLogin() = runTest {
-        val vm = PaymentViewModel(FakePaymentApi())
+    fun signupRequiresLogin() = runTest(testDispatcher) {
+        val vm = PaymentViewModel(FakePaymentApi(), testDispatcher)
         vm.signup(Tariff("1m", 1, 400, "1 месяц"))
         advanceUntilIdle()
         // No login -> stays on tariff selection with an error.
@@ -52,9 +56,9 @@ class PaymentViewModelTest {
     }
 
     @Test
-    fun signupThenPaidThenActive() = runTest {
+    fun signupThenPaidThenActive() = runTest(testDispatcher) {
         val api = FakePaymentApi()
-        val vm = PaymentViewModel(api)
+        val vm = PaymentViewModel(api, testDispatcher)
         vm.onLoginChanged("maria")
 
         vm.signup(Tariff("3m", 3, 1100, "3 месяца"))
@@ -71,9 +75,10 @@ class PaymentViewModelTest {
     }
 
     @Test
-    fun rejectedStatusEndsFlow() = runTest {
+    fun rejectedStatusEndsFlow() = runTest(testDispatcher) {
         val vm = PaymentViewModel(
-            FakePaymentApi(StatusResponse(status = StatusResponse.STATUS_REJECTED))
+            FakePaymentApi(StatusResponse(status = StatusResponse.STATUS_REJECTED)),
+            testDispatcher
         )
         vm.onLoginChanged("bob")
         vm.signup(Tariff("1m", 1, 400, "1 месяц"))

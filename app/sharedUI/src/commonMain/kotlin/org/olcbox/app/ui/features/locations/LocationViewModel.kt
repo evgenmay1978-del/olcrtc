@@ -158,6 +158,31 @@ class LocationViewModel(
         }
     }
 
+    /**
+     * Writes the access token granted by the subscription into every stored
+     * location so any chosen server authenticates with the operator. Saved
+     * configs that already carry the same token are left untouched.
+     */
+    fun applyAccessToken(token: String, onComplete: () -> Unit = {}) {
+        val value = token.trim()
+        if (value.isEmpty()) {
+            onComplete()
+            return
+        }
+        viewModelScope.launch {
+            val bundle = locationsRepository.getBundle()
+            bundle.locations.forEach { entry ->
+                if (entry.location.token != value) {
+                    locationsRepository.saveLocation(
+                        entry.storageId,
+                        entry.location.copy(token = value).normalized()
+                    )
+                }
+            }
+            loadLocations(onComplete)
+        }
+    }
+
     fun selectLocation(id: String, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             locationsRepository.setActiveLocationId(id)

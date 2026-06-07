@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android TV banner (320x180 dp). Shown on the leanback home screen. Kept as a
+    vector so it scales crisply without shipping density-specific PNGs.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <path
+        android:fillColor="#0E1726"
+        android:pathData="M0,0 h320 v180 h-320 z" />
+
+    <!-- Shield glyph -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M56,44 l34,12 v26 c0,26 -16,40 -34,48 c-18,-8 -34,-22 -34,-48 v-26 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,92 l9,9 l20,-22 l6,6 l-26,28 l-15,-15 z" />
+</vector>

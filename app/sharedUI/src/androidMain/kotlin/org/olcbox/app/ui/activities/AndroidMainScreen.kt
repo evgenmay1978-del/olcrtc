@@ -409,7 +409,10 @@ fun AndroidMainScreen(
             paymentPrefs.edit().putString("panel_url", url).apply()
         },
         onSubscriptionActivated = { token ->
-            Toast.makeText(context, "Доступ активен", Toast.LENGTH_LONG).show()
+            locationViewModel.applyAccessToken(token) {
+                viewModel.loadCurrentConfig()
+            }
+            Toast.makeText(context, "Доступ активен — токен подключён", Toast.LENGTH_LONG).show()
         }
     )
 

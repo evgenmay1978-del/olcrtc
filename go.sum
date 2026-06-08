@@ -162,8 +162,6 @@ github.com/pion/datachannel v1.6.0 h1:XecBlj+cvsxhAMZWFfFcPyUaDZtd7IJvrXqlXD/53i
 github.com/pion/datachannel v1.6.0/go.mod h1:ur+wzYF8mWdC+Mkis5Thosk+u/VOL287apDNEbFpsIk=
 github.com/pion/dtls/v3 v3.1.2 h1:gqEdOUXLtCGW+afsBLO0LtDD8GnuBBjEy6HRtyofZTc=
 github.com/pion/dtls/v3 v3.1.2/go.mod h1:Hw/igcX4pdY69z1Hgv5x7wJFrUkdgHwAn/Q/uo7YHRo=
-github.com/pion/ice/v4 v4.2.5 h1:5umUQy4hX6HwMsCnJ0SX337YYCeTWDgC9JWyvUqHIHs=
-github.com/pion/ice/v4 v4.2.5/go.mod h1:aaABRaykEYnNjccjbiimuYxViaASeuv5mk9BpplUxK0=
 github.com/pion/interceptor v0.1.45 h1:6PUo/5829bIfRFIPPJQzuDn8EjxRTSB/CSD7QVCOaqo=
 github.com/pion/interceptor v0.1.45/go.mod h1:gNDYM/uFKcLe/B3gS2/7+aw6z+RDiMy2qKTnF1LO31w=
 github.com/pion/logging v0.2.4 h1:tTew+7cmQ+Mc1pTBLKH2puKsOvhm32dROumOZ655zB8=
@@ -233,12 +231,6 @@ github.com/xtaci/smux v1.5.57/go.mod h1:IGQ9QYrBphmb/4aTnLEcJby0TNr3NV+OslIOMrX8
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/zarazaex69/gr v0.1.5 h1:Lpr4WrNXHL/ma65ZXeQH2UyFi6HziJoqqjaYCLisOQY=
 github.com/zarazaex69/gr v0.1.5/go.mod h1:hAk5j/s2QFlvr3bJkjPwakZENsMBx6VOUN1GwYzYoRw=
-github.com/zarazaex69/j v0.0.0-20260528155819-956a22114ef6 h1:0VjePKBshNBf3dWThq7DAT+Sm6uKlzBajabFkB0RNQo=
-github.com/zarazaex69/j v0.0.0-20260528155819-956a22114ef6/go.mod h1:7/ypJTenOIPx23fpo5uF7l4u+rxZqg9cFbTL/N77Ktc=
-github.com/zarazaex69/j v0.0.0-20260529182741-8fecd70f2627 h1:V6n6YSffo3I3pL31ThlvSxKQGWkP4F2anrnghIMVgyE=
-github.com/zarazaex69/j v0.0.0-20260529182741-8fecd70f2627/go.mod h1:7/ypJTenOIPx23fpo5uF7l4u+rxZqg9cFbTL/N77Ktc=
-github.com/zarazaex69/j v0.0.0-20260529185404-2981d5ea19f1 h1:Xw2LVb7GHIXWUVVWilbM9UKpuDqUlPanufRLtG2k2yA=
-github.com/zarazaex69/j v0.0.0-20260529185404-2981d5ea19f1/go.mod h1:7/ypJTenOIPx23fpo5uF7l4u+rxZqg9cFbTL/N77Ktc=
 github.com/zarazaex69/j v0.0.0-20260529190049-6e5d2c4287ce h1:jLs7a3nd3U9TR++LDKt3HyQbAruYvvgwlbdGPaV2x3w=
 github.com/zarazaex69/j v0.0.0-20260529190049-6e5d2c4287ce/go.mod h1:7/ypJTenOIPx23fpo5uF7l4u+rxZqg9cFbTL/N77Ktc=
 github.com/zeebo/assert v1.3.0 h1:g7C04CbJuIDKNPFHmsk4hwZDO5O+kntRxzaUoNXj+IQ=

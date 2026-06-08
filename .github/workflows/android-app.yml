@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   ANDROID_NDK_VERSION: "28.2.13676358"
@@ -99,3 +99,19 @@ jobs:
           name: olcbox-debug-apk
           path: app/dist/olcbox-debug.apk
           retention-days: 7
+
+      # Publish the APK as a Release asset on pushes to the default branch.
+      # Release assets are not subject to the Actions artifact storage quota,
+      # so this gives a stable URL to install on a phone or Android TV even
+      # when the artifact upload above is skipped because the quota is full.
+      - name: Publish APK to "android-latest" release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Latest debug APK
+          body: |
+            Unsigned debug APK built from ${{ github.sha }}.
+            Install on a phone or Android TV (enable "unknown sources").
+          prerelease: true
+          files: app/dist/olcbox-debug.apk

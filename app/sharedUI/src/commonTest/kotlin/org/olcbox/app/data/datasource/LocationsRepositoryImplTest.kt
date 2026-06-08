@@ -425,11 +425,15 @@ class LocationsRepositoryImplTest {
             LocationConfig.supportedTransportsForProvider(LocationConfig.PROVIDER_WB_STREAM)
         )
         assertEquals(
-            listOf(LocationConfig.TRANSPORT_DATACHANNEL),
+            listOf(
+                LocationConfig.TRANSPORT_VP8CHANNEL,
+                LocationConfig.TRANSPORT_DATACHANNEL,
+                LocationConfig.TRANSPORT_SEICHANNEL
+            ),
             LocationConfig.supportedTransportsForProvider(LocationConfig.PROVIDER_JITSI)
         )
         assertEquals(
-            LocationConfig.TRANSPORT_DATACHANNEL,
+            LocationConfig.TRANSPORT_VP8CHANNEL,
             LocationConfig.normalizeTransport(LocationConfig.TRANSPORT_VP8CHANNEL, LocationConfig.PROVIDER_JITSI)
         )
     }

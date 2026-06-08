@@ -89,7 +89,11 @@ data class LocationConfig(
         fun supportedTransportsForProvider(provider: String): List<String> {
             return when (normalizeProvider(provider)) {
                 PROVIDER_TELEMOST -> listOf(TRANSPORT_VP8CHANNEL, TRANSPORT_SEICHANNEL)
-                PROVIDER_JITSI -> listOf(TRANSPORT_DATACHANNEL)
+                PROVIDER_JITSI -> listOf(
+                    TRANSPORT_VP8CHANNEL,
+                    TRANSPORT_DATACHANNEL,
+                    TRANSPORT_SEICHANNEL
+                )
                 else -> supportedTransports
             }
         }

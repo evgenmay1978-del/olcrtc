@@ -585,6 +585,16 @@ func (s *Session) rtcpKeepalive(pc *webrtc.PeerConnection) {
 		case <-s.done:
 			return
 		case <-ticker.C:
+			// Until the PeerConnection is connected, WriteRTCP fails because
+			// DTLS is not up yet. On mobile / TURN-relay-only paths ICE and DTLS
+			// can take longer than maxErrors*interval to establish, so counting
+			// these pre-connect failures would tear down a session that is still
+			// legitimately coming up. Only count failures once connected (those
+			// mean a live connection went dead).
+			if pc.ConnectionState() != webrtc.PeerConnectionStateConnected {
+				errCount = 0
+				continue
+			}
 			if err := pc.WriteRTCP(pkts); err != nil {
 				if s.closed.Load() {
 					return

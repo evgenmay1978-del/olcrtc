@@ -10,6 +10,9 @@ WORKDIR /src
 RUN apk add --no-cache ca-certificates git
 
 COPY go.mod go.sum ./
+# Vendored, locally-replaced modules must be present before `go mod download`
+# resolves the build list (go.mod has a replace pointing at ./third_party).
+COPY third_party ./third_party
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 

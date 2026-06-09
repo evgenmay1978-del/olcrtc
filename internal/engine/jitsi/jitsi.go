@@ -303,6 +303,9 @@ func (s *Session) joinAndOpenBridge(ctx context.Context) (*j.Session, error) { /
 		return nil, fmt.Errorf("jitsi join: %w", err)
 	}
 	logger.Infof("jitsi: joined %s/%s; colibri-ws=%s", s.host, s.room, jSess.ColibriWS)
+	for _, ice := range jSess.ICEServers {
+		logger.Infof("jitsi: discovered ICE server urls=%v user=%q", ice.URLs, ice.Username)
+	}
 
 	needBridge := s.onData != nil || s.onPeerData != nil
 	sctpBridge := needBridge && jSess.ColibriWS == ""

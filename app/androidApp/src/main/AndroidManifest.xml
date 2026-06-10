@@ -38,7 +38,7 @@
         android:name=".App"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
-        android:label="Olcbox"
+        android:label="MaestroVPN"
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="true">

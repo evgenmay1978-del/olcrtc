@@ -1,0 +1,96 @@
+name: Build Windows App (portable)
+
+# Builds the Compose Desktop client (app/desktopApp) into a portable Windows
+# zip (jpackage app image + bundled olcrtc Go binaries, tun2socks and wintun).
+# jpackage is platform-specific, so this must run on a Windows runner.
+
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "app/**"
+      - "internal/**"
+      - "third_party/**"
+      - "pkg/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/windows-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_NDK_VERSION: "28.2.13676358"
+
+jobs:
+  build-windows:
+    name: Build portable Windows zip
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      # The Gradle build configures the whole app/ project, including the
+      # Android module, so the Android SDK/NDK must be present even though we
+      # only build the desktop target.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build portable Windows zip
+        working-directory: app
+        run: ./gradlew :desktopApp:packageReleasePortableZip --no-daemon --stacktrace
+
+      - name: Collect artifact
+        working-directory: app
+        run: |
+          mkdir -p dist
+          zip="$(find desktopApp/build/compose/binaries/main-release/portable -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
+          if [ -z "$zip" ]; then
+            echo "Windows portable zip not found" >&2
+            find desktopApp/build/compose -type f -name '*.zip' || true
+            exit 1
+          fi
+          cp "$zip" "dist/MaestroVPN-windows-portable.zip"
+
+      - name: Upload artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestrovpn-windows-portable
+          path: app/dist/MaestroVPN-windows-portable.zip
+          retention-days: 7
+
+      - name: Publish to "windows-latest" release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-latest
+          name: MaestroVPN — Windows (portable)
+          body: |
+            Portable Windows build from ${{ github.sha }}.
+            Unzip and run MaestroVPN.exe (no install). 64-bit Windows.
+          prerelease: true
+          files: app/dist/MaestroVPN-windows-portable.zip

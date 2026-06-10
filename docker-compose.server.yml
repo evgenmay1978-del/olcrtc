@@ -32,6 +32,9 @@ services:
       OLCRTC_SEI_FRAG: "${OLCRTC_SEI_FRAG:-0}"
       OLCRTC_SEI_ACK: "${OLCRTC_SEI_ACK:-0}"
       OLCRTC_DEBUG: "${OLCRTC_DEBUG:-false}"
+      # Liveness watchdog heartbeat file. When set, the server self-restarts if
+      # it shows no healthy activity for ~10 min (recovers a stuck room presence).
+      OLCRTC_HEARTBEAT: "${OLCRTC_HEARTBEAT:-/tmp/olcrtc-heartbeat}"
       # Access control / billing (paid multi-client). Manage the registry with
       # docker compose exec olcrtc-server \
       #   olcrtc-admin -registry /var/lib/olcrtc/clients.json <command>

@@ -681,7 +681,10 @@ func Run(ctx context.Context, cfg Config) error {
 	run := func(ctx context.Context) error {
 		return runOnce(ctx, cfg, roomURL, liveness, traffic, cover)
 	}
-	if maxDuration > 0 {
+	// The server must behave like a normal VPN: stay up and rejoin forever
+	// until intentionally stopped (parent ctx cancelled). Always supervise it,
+	// even without a max-session-duration, so any session end re-establishes.
+	if cfg.Mode == modeSRV || maxDuration > 0 {
 		return runWithSessionRotation(ctx, maxDuration, run)
 	}
 	return run(ctx)
@@ -798,32 +801,34 @@ func runWithSessionRotation(ctx context.Context, maxDuration time.Duration, run 
 		currentCycle := cycle
 		runCtx, cancel := context.WithCancel(ctx)
 		var rotated atomic.Bool
-		timer := time.AfterFunc(maxDuration, func() {
-			rotated.Store(true)
-			logger.Infof("session max duration reached: duration=%s cycle=%d", maxDuration, currentCycle)
-			cancel()
-		})
+		var timer *time.Timer
+		if maxDuration > 0 {
+			timer = time.AfterFunc(maxDuration, func() {
+				rotated.Store(true)
+				logger.Infof("session max duration reached: duration=%s cycle=%d", maxDuration, currentCycle)
+				cancel()
+			})
+		}
 
 		err := run(runCtx)
 		cancel()
-		timer.Stop()
+		if timer != nil {
+			timer.Stop()
+		}
 		if ctx.Err() != nil {
 			return nil //nolint:nilerr // parent cancellation is normal shutdown for rotation
 		}
-		if rotated.Load() {
-			if err != nil {
-				logger.Warnf("session rotation ended with error: cycle=%d err=%v", currentCycle, err)
-			}
+		// Any other end — error, max-duration rotation, or a clean stop — must
+		// re-establish the session (VPN-style "always reconnect"). Only an
+		// intentional parent cancellation (handled above) stops the loop.
+		switch {
+		case err != nil:
+			logger.Warnf("session ended with error, restarting: cycle=%d err=%v", currentCycle, err)
+		case rotated.Load():
 			logger.Infof("session rotation restarting: next_cycle=%d", currentCycle+1)
-			if err := waitSessionRestart(ctx); err != nil {
-				return nil //nolint:nilerr // canceled restart delay means normal shutdown
-			}
-			continue
+		default:
+			logger.Infof("session ended cleanly, restarting: next_cycle=%d", currentCycle+1)
 		}
-		if err != nil {
-			return err
-		}
-		logger.Infof("session ended cleanly with lifecycle rotation enabled: next_cycle=%d", currentCycle+1)
 		if err := waitSessionRestart(ctx); err != nil {
 			return nil //nolint:nilerr // canceled restart delay means normal shutdown
 		}

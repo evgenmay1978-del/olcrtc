@@ -82,6 +82,7 @@ type Server struct {
 	socksProxyPass string
 	liveness       control.Config
 	health         *runtime.HealthTracker
+	wd             healthClock
 	cover          muxconn.CoverConfig
 	coverCtx       context.Context //nolint:containedctx // base ctx for per-session cover pacers built off Run's runCtx
 	usage          *accounting.Tracker
@@ -222,6 +223,10 @@ func Run(ctx context.Context, cfg Config) error {
 		s.wg.Add(1)
 		go s.flushUsageLoop(runCtx)
 	}
+
+	// Liveness watchdog: a stuck/ghost room presence (e.g. a hung jitsi
+	// reconnect) self-heals by restarting the process for a fresh join.
+	go s.runWatchdog(runCtx)
 
 	s.serve(runCtx)
 
@@ -657,6 +662,7 @@ func (s *Server) acceptHandshake(ctx context.Context, sess *smux.Session) bool {
 	s.recordSession(sid)
 	s.usage.SetDevice(sid, hello.DeviceID)
 	s.onOpen(sid, hello.DeviceID, hello.Claims)
+	s.wd.mark()
 	logger.Infof("session %s opened (device=%s)", sid, hello.DeviceID)
 	s.startControlLoop(ctx, sess, stream)
 	return true
@@ -710,6 +716,7 @@ func (s *Server) acceptPeerHandshake(ps *peerSession) bool {
 	s.recordSession(sid)
 	s.usage.SetDevice(sid, hello.DeviceID)
 	s.onOpen(sid, hello.DeviceID, hello.Claims)
+	s.wd.mark()
 	logger.Infof("session %s opened (device=%s peer=%s)", sid, hello.DeviceID, ps.peerID)
 	s.startPeerControlLoop(ps, stream)
 	return true
@@ -964,6 +971,7 @@ func (s *Server) dispatch(stream *smux.Stream, req ConnectRequest, sessionID str
 	s.usage.AddBytes(sessionID, bytesIn, bytesOut)
 	if s.onTraffic != nil {
 		s.onTraffic(sessionID, addr, bytesIn, bytesOut)
+		s.wd.mark()
 	}
 }
 

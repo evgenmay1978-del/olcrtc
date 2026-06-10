@@ -46,15 +46,50 @@ func (t *Telegram) Enabled() bool {
 	return t != nil && t.token != "" && t.chatID != ""
 }
 
+// Button is one inline-keyboard button: a label and the callback_data Telegram
+// sends back to the bot when the operator taps it.
+type Button struct {
+	Text string
+	Data string
+}
+
 // Notify sends text to the configured chat. It is a no-op when disabled.
 func (t *Telegram) Notify(ctx context.Context, text string) error {
 	if !t.Enabled() {
 		return nil
 	}
-	payload, err := json.Marshal(map[string]string{
-		"chat_id": t.chatID,
-		"text":    text,
+	return t.send(ctx, map[string]any{"chat_id": t.chatID, "text": text})
+}
+
+// NotifyButtons sends text with an inline keyboard (rows of buttons), so the
+// operator can act (e.g. approve/reject) straight from the chat. No-op when
+// disabled.
+func (t *Telegram) NotifyButtons(ctx context.Context, text string, rows [][]Button) error {
+	if !t.Enabled() {
+		return nil
+	}
+	type tgBtn struct {
+		Text         string `json:"text"`
+		CallbackData string `json:"callback_data"`
+	}
+	kb := make([][]tgBtn, 0, len(rows))
+	for _, row := range rows {
+		out := make([]tgBtn, 0, len(row))
+		for _, b := range row {
+			out = append(out, tgBtn{Text: b.Text, CallbackData: b.Data})
+		}
+		kb = append(kb, out)
+	}
+	return t.send(ctx, map[string]any{
+		"chat_id":      t.chatID,
+		"text":         text,
+		"reply_markup": map[string]any{"inline_keyboard": kb},
 	})
+}
+
+// send marshals body and POSTs it to the Bot API sendMessage method.
+func (t *Telegram) send(ctx context.Context, body map[string]any) error {
+	payload, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("marshal telegram payload: %w", err)
 	}

@@ -44,6 +44,10 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/rotate", s.requireAuth(s.handleRotate))
 	mux.HandleFunc("/delete", s.requireAuth(s.handleDelete))
 	mux.HandleFunc("/config", s.requireAuth(s.handleConfig))
+	// One-tap approve/reject of a pending payment, used by the Telegram bot
+	// (and the web panel). Approve activates with the signed-up tariff's TTL.
+	mux.HandleFunc("/approve", s.requireAuth(s.handleApprove))
+	mux.HandleFunc("/reject", s.requireAuth(s.handleReject))
 
 	// Public client-facing payment API (no basic auth): the Android app calls
 	// these to list tariffs, sign up, and report payment.

@@ -9,6 +9,7 @@ import (
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/billing"
+	"github.com/openlibrecommunity/olcrtc/internal/notify"
 )
 
 // maxLabelLen bounds a client-supplied login so the registry stays tidy and
@@ -145,9 +146,13 @@ func (s *server) handleAPIPaid(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.notifier != nil {
-		msg := fmt.Sprintf("💳 Заявка на оплату\nЛогин: %s\n%s\nПодтвердите или отклоните в панели.",
+		msg := fmt.Sprintf("💳 Заявка на оплату\nЛогин: %s\n%s\nПодтвердите или отклоните кнопкой ниже.",
 			login, contact)
-		if nErr := s.notifier.Notify(r.Context(), msg); nErr != nil {
+		buttons := [][]notify.Button{{
+			{Text: "✅ Подтвердить", Data: "olcbox:ap:" + login},
+			{Text: "❌ Отклонить", Data: "olcbox:rj:" + login},
+		}}
+		if nErr := s.notifier.NotifyButtons(r.Context(), msg, buttons); nErr != nil {
 			// Notification failure must not lose the claim; log via response.
 			writeJSON(w, http.StatusOK, map[string]any{
 				statusKey: "pending",
@@ -157,6 +162,71 @@ func (s *server) handleAPIPaid(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{statusKey: "pending"})
+}
+
+// tariffIDFromContact extracts the tariff id from the contact note that signup
+// stores, e.g. "tariff 2m (750₽)" -> "2m".
+func tariffIDFromContact(contact string) string {
+	const p = "tariff "
+	i := strings.Index(contact, p)
+	if i < 0 {
+		return ""
+	}
+	rest := contact[i+len(p):]
+	if j := strings.IndexByte(rest, ' '); j >= 0 {
+		return rest[:j]
+	}
+	return rest
+}
+
+// handleApprove activates a pending client for its signed-up tariff's full
+// duration. Used by the Telegram approve button and the web panel.
+func (s *server) handleApprove(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		apiError(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	label := strings.TrimSpace(r.FormValue("label"))
+	if label == "" {
+		apiError(w, http.StatusBadRequest, "label required")
+		return
+	}
+	err := s.withStore(true, func(st *access.Store) error {
+		c, ok := st.Lookup(label)
+		if !ok {
+			return fmt.Errorf("%w: %q", access.ErrClientNotFound, label)
+		}
+		tariff, lErr := billing.Lookup(tariffIDFromContact(c.Contact))
+		if lErr != nil {
+			return lErr
+		}
+		return st.SetStatus(label, access.StatusActive, tariff.TTL())
+	})
+	if err != nil {
+		apiError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusActive, "login": label})
+}
+
+// handleReject declines a pending payment: the client gets no access.
+func (s *server) handleReject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		apiError(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	label := strings.TrimSpace(r.FormValue("label"))
+	if label == "" {
+		apiError(w, http.StatusBadRequest, "label required")
+		return
+	}
+	if err := s.withStore(true, func(st *access.Store) error {
+		return st.SetStatus(label, access.StatusRejected, 0)
+	}); err != nil {
+		apiError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusRejected, "login": label})
 }
 
 // clientView is the normalized status of one client for the status endpoint.

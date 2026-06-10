@@ -35,13 +35,11 @@ func (t Tariff) TTL() time.Duration {
 }
 
 // Catalog returns the available tariffs in display order. These are the prices
-// offered to new clients: 1/2/3/6 months.
+// offered to new clients.
 func Catalog() []Tariff {
 	return []Tariff{
 		{ID: "1m", Months: 1, PriceRUB: 400, Title: "1 месяц"},
-		{ID: "2m", Months: 2, PriceRUB: 780, Title: "2 месяца"},
-		{ID: "3m", Months: 3, PriceRUB: 1100, Title: "3 месяца"},
-		{ID: "6m", Months: 6, PriceRUB: 2200, Title: "6 месяцев"},
+		{ID: "2m", Months: 2, PriceRUB: 750, Title: "2 месяца"},
 	}
 }
 

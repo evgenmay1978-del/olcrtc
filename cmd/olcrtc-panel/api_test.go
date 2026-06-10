@@ -37,7 +37,7 @@ func TestAPITariffs(t *testing.T) {
 		t.Fatalf("tariffs status = %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"400", "780", "1100", "2200"} {
+	for _, want := range []string{"400", "750"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("tariffs missing price %s: %s", want, body)
 		}
@@ -49,7 +49,7 @@ func TestAPISignupFlow(t *testing.T) {
 	s.payInfo = "pay to +7..."
 
 	// Signup creates a pending client and returns pay info.
-	rec := apiPost(t, s, "/api/signup", `{"login":"maria","tariff":"3m"}`)
+	rec := apiPost(t, s, "/api/signup", `{"login":"maria","tariff":"2m"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("signup status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -83,7 +83,7 @@ func TestAPISignupFlow(t *testing.T) {
 
 func TestAPIPaidThenApproveActivates(t *testing.T) {
 	s, _ := newTestServer(t)
-	if rec := apiPost(t, s, "/api/signup", `{"login":"maria","tariff":"3m"}`); rec.Code != http.StatusOK {
+	if rec := apiPost(t, s, "/api/signup", `{"login":"maria","tariff":"2m"}`); rec.Code != http.StatusOK {
 		t.Fatalf("signup = %d", rec.Code)
 	}
 

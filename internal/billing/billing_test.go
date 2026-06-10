@@ -12,9 +12,7 @@ func TestCatalogMatchesPriceList(t *testing.T) {
 		price  int
 	}{
 		"1m": {1, 400},
-		"2m": {2, 780},
-		"3m": {3, 1100},
-		"6m": {6, 2200},
+		"2m": {2, 750},
 	}
 	cat := Catalog()
 	if len(cat) != len(want) {
@@ -32,12 +30,12 @@ func TestCatalogMatchesPriceList(t *testing.T) {
 }
 
 func TestLookupAndTTL(t *testing.T) {
-	tr, err := Lookup("3m")
+	tr, err := Lookup("2m")
 	if err != nil {
-		t.Fatalf("Lookup(3m): %v", err)
+		t.Fatalf("Lookup(2m): %v", err)
 	}
-	if want := 90 * 24 * time.Hour; tr.TTL() != want {
-		t.Fatalf("3m TTL = %v, want %v", tr.TTL(), want)
+	if want := 60 * 24 * time.Hour; tr.TTL() != want {
+		t.Fatalf("2m TTL = %v, want %v", tr.TTL(), want)
 	}
 	if _, err := Lookup("nope"); !errors.Is(err, ErrUnknownTariff) {
 		t.Fatalf("Lookup(nope) = %v, want ErrUnknownTariff", err)

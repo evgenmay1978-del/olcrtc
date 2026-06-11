@@ -68,7 +68,12 @@ data class LocationConfig(
         const val TRANSPORT_DATACHANNEL = "datachannel"
         const val TRANSPORT_VP8CHANNEL = "vp8channel"
         const val TRANSPORT_SEICHANNEL = "seichannel"
-        const val DEFAULT_TRANSPORT = TRANSPORT_VP8CHANNEL
+        // datachannel works over the mobile TURN-relay path (vp8channel needs a
+        // reachable TURN media path, which mobile networks often block). The
+        // server-side watchdog now keeps the room alive, so the "2-minute drop"
+        // that motivated vp8channel no longer applies. Per-provider validation
+        // (normalizeTransport) still upgrades providers that lack datachannel.
+        const val DEFAULT_TRANSPORT = TRANSPORT_DATACHANNEL
 
         const val DEFAULT_VP8_FPS = 60
         const val DEFAULT_VP8_BATCH = 64
@@ -90,8 +95,8 @@ data class LocationConfig(
             return when (normalizeProvider(provider)) {
                 PROVIDER_TELEMOST -> listOf(TRANSPORT_VP8CHANNEL, TRANSPORT_SEICHANNEL)
                 PROVIDER_JITSI -> listOf(
-                    TRANSPORT_VP8CHANNEL,
                     TRANSPORT_DATACHANNEL,
+                    TRANSPORT_VP8CHANNEL,
                     TRANSPORT_SEICHANNEL
                 )
                 else -> supportedTransports

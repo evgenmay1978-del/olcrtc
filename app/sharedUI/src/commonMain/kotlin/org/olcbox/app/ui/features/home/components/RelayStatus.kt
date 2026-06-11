@@ -59,14 +59,14 @@ fun RelayStatus(
         else -> MaterialTheme.colorScheme.onSurface
     }
     val title = when {
-        isActive -> "Relay Active"
+        isActive -> "ЗАЩИТА АКТИВНА"
         requiresSetup -> "Relay Inactive"
         else -> "Relay Inactive"
     }
     val subtitle = when {
-        isActive -> "Connected"
+        isActive -> "Подключено"
         requiresSetup -> "No location selected"
-        else -> "Disconnected"
+        else -> "Отключено"
     }
 
     Surface(

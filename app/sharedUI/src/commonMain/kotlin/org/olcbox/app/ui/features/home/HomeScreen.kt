@@ -64,8 +64,8 @@ fun HomeScreen(
 
     val primaryActionLabel = when {
         requiresSetup -> "SETUP"
-        state.isVpnLoading || state.isVpnConnected -> "STOP"
-        else -> "START"
+        state.isVpnLoading || state.isVpnConnected -> "СТОП"
+        else -> "ПУСК"
     }
 
     fun refreshSubscriptions() {

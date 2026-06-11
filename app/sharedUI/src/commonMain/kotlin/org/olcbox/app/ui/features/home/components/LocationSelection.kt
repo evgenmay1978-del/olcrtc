@@ -117,7 +117,7 @@ fun LocationSelectorScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         LocationGroupHeader(
-                            title = "Custom locations",
+                            title = "Серверы",
                             modifier = Modifier.weight(1f)
                         )
 
@@ -159,7 +159,7 @@ fun LocationSelectorScreen(
                 Icon(Icons.Rounded.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Add custom location",
+                    text = "Добавить сервер",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -176,7 +176,7 @@ fun LocationSelectorScreen(
                     Icon(Icons.Rounded.Add, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Add subscription",
+                        text = "Купить подписку",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -204,7 +204,7 @@ private fun RelaySetupCard(
         )
 
         SetupActionRow(
-            title = "Add subscription",
+            title = "Купить подписку",
             subtitle = "Scan QR, paste URI, or import file",
             icon = Icons.Outlined.QrCodeScanner,
             prominent = true,

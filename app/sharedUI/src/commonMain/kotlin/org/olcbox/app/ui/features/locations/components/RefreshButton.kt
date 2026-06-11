@@ -58,6 +58,6 @@ fun RefreshButton(
                 .rotate(rotation)
         )
         Spacer(Modifier.size(8.dp))
-        Text("Ping")
+        Text("Пинг")
     }
 }

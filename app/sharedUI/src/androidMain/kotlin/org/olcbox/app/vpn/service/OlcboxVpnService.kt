@@ -496,7 +496,7 @@ class OlcboxVpnService : VpnService() {
         isRestart: Boolean
     ) {
         setStatus(if (isMigration || isRestart) VpnStatus.Reconnecting else VpnStatus.Connecting)
-        updateNotification("Connecting...")
+        updateNotification("Подключение…")
         stopTransportProcesses(closeTun = true, waitForSocksPort = true)
         coroutineContext.ensureActive()
         if (requestedGeneration != generation) return

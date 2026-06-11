@@ -101,10 +101,10 @@ fun StartButton(
 
             Text(
                 text = label ?: when {
-                    isLoading -> "STOP"
-                    isActive -> "STOP"
+                    isLoading -> "СТОП"
+                    isActive -> "СТОП"
                     requiresSetup -> "SETUP"
-                    else -> "START"
+                    else -> "ПУСК"
                 },
                 color = contentColor.copy(alpha = if (!enabled) 0.7f else 1f),
                 fontSize = 22.sp,

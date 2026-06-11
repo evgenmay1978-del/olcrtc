@@ -34,7 +34,7 @@ fun HomeScreenAppBar(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "multiplatform olcrtc configurator",
+                    text = "Защита. Скорость. Свобода",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -2306,19 +2306,19 @@ private fun AndroidSplitTunnelSettings.packagesFor(list: AndroidSplitTunnelList)
 
 private fun AndroidSplitTunnelMode.title(): String {
     return when (this) {
-        AndroidSplitTunnelMode.AllApps -> "All Apps"
-        AndroidSplitTunnelMode.ProxySelected -> "Selected Apps Only"
-        AndroidSplitTunnelMode.BypassSelected -> "Bypass Selected"
+        AndroidSplitTunnelMode.AllApps -> "Весь трафик через VPN"
+        AndroidSplitTunnelMode.ProxySelected -> "VPN только для выбранных (рекомендуется)"
+        AndroidSplitTunnelMode.BypassSelected -> "Исключить выбранные из VPN"
     }
 }
 
 private fun AndroidSplitTunnelMode.subtitle(settings: AndroidSplitTunnelSettings): String {
     return when (this) {
-        AndroidSplitTunnelMode.AllApps -> "Every app uses MaestroVPN"
+        AndroidSplitTunnelMode.AllApps -> "Все приложения — через VPN (рос. апы видят VPN)"
         AndroidSplitTunnelMode.ProxySelected -> if (settings.proxyPackages.isEmpty()) {
-            "Choose apps that use MaestroVPN"
+            "Выберите апы для VPN; остальное (банки, госуслуги) — напрямую, без VPN"
         } else {
-            "${appCount(settings.proxyPackages.size)} use MaestroVPN"
+            "Через VPN: ${appCount(settings.proxyPackages.size)}; остальное напрямую"
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (settings.bypassPackages.isEmpty()) {

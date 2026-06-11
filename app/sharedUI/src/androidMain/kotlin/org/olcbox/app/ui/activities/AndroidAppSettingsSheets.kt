@@ -345,7 +345,7 @@ private fun AppSettingsHubContent(
             value = if (dynamicThemeEnabled) {
                 "Using Android system colors"
             } else {
-                "Using Olcbox colors"
+                "Using MaestroVPN colors"
             },
             icon = Icons.Outlined.Palette,
             checked = dynamicThemeEnabled,
@@ -628,7 +628,7 @@ private fun SplitTunnelingSettingsContent(
         when (settings.mode) {
             AndroidSplitTunnelMode.AllApps -> SplitTunnelNoListCard()
             AndroidSplitTunnelMode.ProxySelected -> SplitTunnelAppListAction(
-                title = "Apps Using Olcbox",
+                title = "Apps Using MaestroVPN",
                 value = settings.proxyPackages.activeListValue(requireSelection = true),
                 icon = Icons.Outlined.Shield,
                 enabled = enabled,
@@ -2314,34 +2314,34 @@ private fun AndroidSplitTunnelMode.title(): String {
 
 private fun AndroidSplitTunnelMode.subtitle(settings: AndroidSplitTunnelSettings): String {
     return when (this) {
-        AndroidSplitTunnelMode.AllApps -> "Every app uses Olcbox"
+        AndroidSplitTunnelMode.AllApps -> "Every app uses MaestroVPN"
         AndroidSplitTunnelMode.ProxySelected -> if (settings.proxyPackages.isEmpty()) {
-            "Choose apps that use Olcbox"
+            "Choose apps that use MaestroVPN"
         } else {
-            "${appCount(settings.proxyPackages.size)} use Olcbox"
+            "${appCount(settings.proxyPackages.size)} use MaestroVPN"
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (settings.bypassPackages.isEmpty()) {
-            "Choose apps that bypass Olcbox"
+            "Choose apps that bypass MaestroVPN"
         } else {
-            "${appCount(settings.bypassPackages.size)} bypass Olcbox"
+            "${appCount(settings.bypassPackages.size)} bypass MaestroVPN"
         }
     }
 }
 
 private fun AndroidSplitTunnelMode.statusTitle(settings: AndroidSplitTunnelSettings): String {
     return when (this) {
-        AndroidSplitTunnelMode.AllApps -> "All apps use Olcbox"
+        AndroidSplitTunnelMode.AllApps -> "All apps use MaestroVPN"
         AndroidSplitTunnelMode.ProxySelected -> if (settings.proxyPackages.isEmpty()) {
             "No apps selected"
         } else {
-            "Only ${appCount(settings.proxyPackages.size)} use Olcbox"
+            "Only ${appCount(settings.proxyPackages.size)} use MaestroVPN"
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (settings.bypassPackages.isEmpty()) {
-            "No apps bypass Olcbox"
+            "No apps bypass MaestroVPN"
         } else {
-            "${appCount(settings.bypassPackages.size)} bypass Olcbox"
+            "${appCount(settings.bypassPackages.size)} bypass MaestroVPN"
         }
     }
 }
@@ -2354,14 +2354,14 @@ private fun AndroidSplitTunnelMode.icon() = when (this) {
 
 private fun AndroidSplitTunnelList.title(): String {
     return when (this) {
-        AndroidSplitTunnelList.Proxy -> "Apps Using Olcbox"
+        AndroidSplitTunnelList.Proxy -> "Apps Using MaestroVPN"
         AndroidSplitTunnelList.Bypass -> "Bypassed Apps"
     }
 }
 
 private fun AndroidSplitTunnelList.selectionSubtitle(count: Int): String {
     return when (this) {
-        AndroidSplitTunnelList.Proxy -> "${appCount(count)} use Olcbox"
+        AndroidSplitTunnelList.Proxy -> "${appCount(count)} use MaestroVPN"
         AndroidSplitTunnelList.Bypass -> "${appCount(count)} bypassed"
     }
 }

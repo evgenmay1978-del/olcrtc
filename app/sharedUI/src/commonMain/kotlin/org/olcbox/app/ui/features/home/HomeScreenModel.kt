@@ -264,7 +264,7 @@ class HomeScreenViewModel(
                     )
                 }
                 if (!imported) {
-                    onError("No valid Olcbox config found")
+                    onError("No valid MaestroVPN config found")
                     return@launch
                 }
                 loadCurrentConfigNow()
@@ -331,7 +331,7 @@ class HomeScreenViewModel(
 
     private fun buildLogsExport(logs: List<String>): String {
         return buildString {
-            appendLine("Olcbox application logs")
+            appendLine("MaestroVPN application logs")
             appendLine("Entries: ${logs.size}")
             appendLine()
             logs.forEachIndexed { index, line ->

@@ -83,7 +83,9 @@ fun AndroidMainScreen(
         context.getSharedPreferences("olcbox_payment", Context.MODE_PRIVATE)
     }
     var panelBaseUrl by rememberSaveable {
-        mutableStateOf(paymentPrefs.getString("panel_url", "").orEmpty())
+        // Default to the operator's payment panel so a freshly installed app
+        // shows tariffs immediately; the user can still override it.
+        mutableStateOf(paymentPrefs.getString("panel_url", "http://wapmixx.ru:8088").orEmpty())
     }
     val paymentViewModel = remember(panelBaseUrl) {
         createPaymentApi(panelBaseUrl)?.let { PaymentViewModel(it) }
@@ -182,7 +184,7 @@ fun AndroidMainScreen(
             updateStatusText = "${info.channel.name} update available: ${info.version}"
         } else {
             updateOffer = null
-            updateStatusText = "Olcbox is up to date"
+            updateStatusText = "MaestroVPN is up to date"
         }
     }
 
@@ -225,7 +227,7 @@ fun AndroidMainScreen(
         scope.launch {
             if (!updateInstaller.canRequestPackageInstalls()) {
                 updateInstaller.openUnknownSourcesSettings()
-                updateStatusText = "Allow Olcbox to install updates, then tap Download again"
+                updateStatusText = "Allow MaestroVPN to install updates, then tap Download again"
                 Toast.makeText(context, updateStatusText, Toast.LENGTH_LONG).show()
                 return@launch
             }

@@ -252,7 +252,7 @@ fun main(args: Array<String>) = application {
     Tray(
         state = trayState,
         icon = painterResource("LinuxIcon.png"),
-        tooltip = "Olcbox",
+        tooltip = "MaestroVPN",
         menu = {
             Item("Open", onClick = { isWindowVisible = true })
             Item(

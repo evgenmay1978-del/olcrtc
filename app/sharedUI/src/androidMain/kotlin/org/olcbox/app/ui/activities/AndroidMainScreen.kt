@@ -85,7 +85,7 @@ fun AndroidMainScreen(
     var panelBaseUrl by rememberSaveable {
         // Default to the operator's payment panel so a freshly installed app
         // shows tariffs immediately; the user can still override it.
-        mutableStateOf(paymentPrefs.getString("panel_url", "http://wapmixx.ru:8088").orEmpty())
+        mutableStateOf(paymentPrefs.getString("panel_url", "https://wapmixx.ru:9443").orEmpty())
     }
     val paymentViewModel = remember(panelBaseUrl) {
         createPaymentApi(panelBaseUrl)?.let { PaymentViewModel(it) }

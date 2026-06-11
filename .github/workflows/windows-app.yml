@@ -48,13 +48,11 @@ jobs:
       # The Gradle build configures the whole app/ project, including the
       # Android module, so the Android SDK/NDK must be present even though we
       # only build the desktop target.
+      # setup-android sets ANDROID_HOME and installs cmdline-tools; the Android
+      # Gradle Plugin auto-provisions the platform/build-tools it needs when the
+      # project is configured, so no manual sdkmanager step is required.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
-
-      - name: Install Android SDK packages
-        run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;${ANDROID_NDK_VERSION}"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

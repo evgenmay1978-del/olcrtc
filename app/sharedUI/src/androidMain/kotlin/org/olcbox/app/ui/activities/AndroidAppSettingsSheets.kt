@@ -2381,11 +2381,8 @@ private fun Set<String>.russianBypassPresetValue(
     }
 }
 
-private fun String.matchesRussianBypassPackage(): Boolean {
-    val packageName = lowercase()
-    return packageName in RUSSIAN_BYPASS_PACKAGE_NAMES ||
-            RUSSIAN_BYPASS_PACKAGE_PREFIXES.any { packageName.startsWith(it) }
-}
+private fun String.matchesRussianBypassPackage(): Boolean =
+    org.olcbox.app.vpn.RussianAppList.matches(this)
 
 private fun Set<String>.activeListValue(requireSelection: Boolean): String {
     return when {
@@ -2431,15 +2428,4 @@ private const val MAX_PROXY_USERNAME_LENGTH = 64
 private const val MAX_PROXY_PASSWORD_LENGTH = 64
 private const val MAX_PROXY_PORT_LENGTH = 5
 private const val RUSSIAN_BYPASS_ACCURACY_MESSAGE =
-    "Auto-detection may be inaccurate."
-private val RUSSIAN_BYPASS_PACKAGE_PREFIXES = listOf(
-    "ru.",
-    "com.yandex."
-)
-private val RUSSIAN_BYPASS_PACKAGE_NAMES = setOf(
-    "ru.sberbankmobile",
-    "ru.ozon.app.android",
-    "ru.avito",
-    "ru.vtb24.mobilebanking.android",
-    "ru.tinkoff.mb"
-)
+    "Список российских приложений обновляется из репозитория."

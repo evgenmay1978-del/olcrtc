@@ -90,6 +90,14 @@ fun AndroidMainScreen(
     val paymentViewModel = remember(panelBaseUrl) {
         createPaymentApi(panelBaseUrl)?.let { PaymentViewModel(it) }
     }
+    // Load the cached Russian-app list immediately and refresh it from the repo
+    // in the background, so the "bypass Russian apps" preset stays up to date.
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            org.olcbox.app.vpn.RussianAppList.loadCached(context)
+            org.olcbox.app.vpn.RussianAppList.refresh(context)
+        }
+    }
     val connectionMode by vpnManager.connectionMode.collectAsState()
     val proxySettings by vpnManager.proxySettings.collectAsState()
     val splitTunnelSettings by vpnManager.splitTunnelSettings.collectAsState()

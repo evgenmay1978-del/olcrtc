@@ -1,0 +1,50 @@
+# MaestroVPN — список российских приложений для авто-байпаса VPN.
+# Эти приложения НЕ пойдут через VPN (и не увидят, что VPN включён).
+# Формат: одна запись на строку.
+#   *prefix   — совпадение по префиксу пакета (например *ru.)
+#   package   — точное имя пакета
+#   #         — комментарий
+# Меняй этот файл в репозитории — приложения подтянут обновление автоматически.
+
+# --- префиксы (покрывают большинство РФ-приложений) ---
+*ru.
+*com.yandex.
+*com.vkontakte
+*com.vk.
+*ru.mail.
+
+# --- банки ---
+ru.sberbankmobile
+com.idamob.tinkoff.android
+ru.vtb24.mobilebanking.android
+ru.alfabank.mobile.android
+com.openbank
+ru.raiffeisennews
+ru.gazprombank.android.mobilebank.app
+ru.psbank.mobile
+ru.mkb.mobile
+ru.rosbank.android
+ru.simpls.brs2.mobbank
+ru.tinkoff.mb
+
+# --- госуслуги / гос ---
+ru.rostel
+ru.gosuslugi.mp
+ru.fns.lkfl2
+ru.nalog.app
+
+# --- маркетплейсы / сервисы ---
+ru.ozon.app.android
+com.wildberries.ru
+ru.avito
+ru.beru.android
+ru.megafon.mlk
+ru.mts.mtstv
+ru.mts.paysdkuikit
+com.gx.mtsmusic
+
+# --- транспорт / доставка ---
+ru.yandex.taxi
+com.yandex.zen
+ru.dostavista.android
+sinet.startup.inDriver

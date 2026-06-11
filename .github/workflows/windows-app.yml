@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: "17"
+          java-version: "21"
 
       # The Gradle build configures the whole app/ project, including the
       # Android module, so the Android SDK/NDK must be present even though we

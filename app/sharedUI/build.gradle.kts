@@ -16,9 +16,9 @@ plugins {
     alias(libs.plugins.metro)
 }
 
-val olcboxVersion = providers.gradleProperty("olcbox.version").orElse("1.0.0")
-val olcboxVersionValue = olcboxVersion.get()
-val generatedAppInfoDir = layout.buildDirectory.dir("generated/source/olcboxAppInfo/commonMain")
+val maestrovpnVersion = providers.gradleProperty("maestrovpn.version").orElse("1.0.0")
+val maestrovpnVersionValue = maestrovpnVersion.get()
+val generatedAppInfoDir = layout.buildDirectory.dir("generated/source/maestrovpnAppInfo/commonMain")
 
 val olcrtcRepoPath = providers.environmentVariable("OLCRTC_REPO")
     .orElse(rootProject.layout.projectDirectory.asFile.parentFile.resolve("olcrtc").absolutePath)
@@ -37,15 +37,15 @@ abstract class GenerateAppInfoTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
-        val packageDir = outputDir.get().asFile.resolve("org/olcbox/app")
+        val packageDir = outputDir.get().asFile.resolve("org/maestrovpn/app")
         packageDir.mkdirs()
         val escapedVersion = version.get().replace("\\", "\\\\").replace("\"", "\\\"")
         packageDir.resolve("GeneratedAppInfo.kt").writeText(
             """
-            package org.olcbox.app
+            package ru.maestrovpn.app
 
             internal object GeneratedAppInfo {
-                const val NAME: String = "olcbox"
+                const val NAME: String = "maestrovpn"
                 const val VERSION: String = "$escapedVersion"
             }
             """.trimIndent() + "\n"
@@ -54,7 +54,7 @@ abstract class GenerateAppInfoTask : DefaultTask() {
 }
 
 val generateAppInfo by tasks.registering(GenerateAppInfoTask::class) {
-    version.set(olcboxVersionValue)
+    version.set(maestrovpnVersionValue)
     outputDir.set(generatedAppInfoDir)
 }
 
@@ -88,7 +88,7 @@ val buildOlcrtcIosXcframework by tasks.registering(Exec::class) {
 
 kotlin {
     android {
-        namespace = "org.olcbox.app.sharedui"
+        namespace = "ru.maestrovpn.app.sharedui"
         compileSdk = 37
         minSdk = 23
 

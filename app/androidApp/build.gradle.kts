@@ -20,12 +20,12 @@ val hasReleaseKeystore =
     keystorePropertiesFile.exists() &&
         listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
             .all { key -> !keystoreProperties.getProperty(key).isNullOrBlank() }
-val olcboxVersion = providers.gradleProperty("olcbox.version").orElse("1.0.0")
-val olcboxVersionCode = providers.gradleProperty("olcbox.versionCode")
+val maestrovpnVersion = providers.gradleProperty("maestrovpn.version").orElse("1.0.0")
+val maestrovpnVersionCode = providers.gradleProperty("maestrovpn.versionCode")
     .map { it.toInt() }
     .orElse(1)
 val defaultAndroidAbiFilters = listOf("armeabi-v7a", "arm64-v8a", "x86_64")
-val androidAbiFilters = providers.gradleProperty("olcbox.android.abiFilters")
+val androidAbiFilters = providers.gradleProperty("maestrovpn.android.abiFilters")
     .map { value ->
         value.split(',')
             .map { it.trim() }
@@ -34,11 +34,11 @@ val androidAbiFilters = providers.gradleProperty("olcbox.android.abiFilters")
     .getOrElse(defaultAndroidAbiFilters)
 
 require(androidAbiFilters.isNotEmpty()) {
-    "olcbox.android.abiFilters must contain at least one Android ABI"
+    "maestrovpn.android.abiFilters must contain at least one Android ABI"
 }
 
 android {
-    namespace = "org.olcbox.app"
+    namespace = "ru.maestrovpn.app"
     compileSdk = 37
     ndkVersion = "28.2.13676358"
 
@@ -46,9 +46,9 @@ android {
         minSdk = 23
         targetSdk = 37
 
-        applicationId = "org.olcbox.app"
-        versionCode = olcboxVersionCode.get()
-        versionName = olcboxVersion.get()
+        applicationId = "ru.maestrovpn.app"
+        versionCode = maestrovpnVersionCode.get()
+        versionName = maestrovpnVersion.get()
 
         ndk {
             abiFilters += androidAbiFilters

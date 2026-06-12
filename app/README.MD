@@ -1,6 +1,6 @@
-# Olcbox (olcRTC fork)
+# MaestroVpn (olcRTC fork)
 
-> Fork of [alananisimov/olcbox](https://github.com/alananisimov/olcbox) (MIT),
+> Fork of [alananisimov/maestrovpn](https://github.com/alananisimov/maestrovpn) (MIT),
 > vendored into the olcRTC monorepo under `app/`. Adds access-token support and
 > an in-app payment flow that talks to the olcRTC server's payment API.
 > Original copyright © 2026 alananisimov; see `LICENSE`.
@@ -8,9 +8,9 @@
 `olcrtc` configurator built with Kotlin Multiplatform and Compose.
 
 <p align="center">
-  <img src="docs/screenshots/photo_2026-05-05_15-40-57.jpg" alt="Olcbox home screen" width="200">
-  <img src="docs/screenshots/photo_2026-05-05_15-40-59.jpg" alt="Olcbox location settings screen" width="200">
-  <img src="docs/screenshots/photo_2026-05-05_20-40-45.jpg" alt="Olcbox split tunneling settings screen" width="200">
+  <img src="docs/screenshots/photo_2026-05-05_15-40-57.jpg" alt="MaestroVpn home screen" width="200">
+  <img src="docs/screenshots/photo_2026-05-05_15-40-59.jpg" alt="MaestroVpn location settings screen" width="200">
+  <img src="docs/screenshots/photo_2026-05-05_20-40-45.jpg" alt="MaestroVpn split tunneling settings screen" width="200">
 </p>
 
 ## Status
@@ -82,7 +82,7 @@ Override it with `OLCRTC_REPO`:
 OLCRTC_REPO=/path/to/olcrtc ./gradlew :desktopApp:run
 ```
 
-Relative `OLCRTC_REPO` values are resolved from the `olcbox` project root:
+Relative `OLCRTC_REPO` values are resolved from the `maestrovpn` project root:
 
 ```bash
 OLCRTC_REPO=../olcrtc-ansible-deploy/olcrtc ./gradlew :androidApp:assembleRelease
@@ -114,10 +114,10 @@ $env:OLCRTC_REPO="C:\path\to\olcrtc"
 | Android debug | `./gradlew :androidApp:assembleDebug` | `androidApp/build/outputs/apk/debug/androidApp-debug.apk` |
 | Android release | `./gradlew :androidApp:assembleRelease` | `androidApp/build/outputs/apk/release/androidApp-release.apk` |
 | iOS simulator | `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -configuration Debug build` | Xcode DerivedData app product |
-| macOS DMG | `./gradlew :desktopApp:packageReleaseDmg` | `desktopApp/build/compose/binaries/main-release/dmg/Olcbox-1.0.0.dmg` |
-| Windows EXE | `.\gradlew.bat :desktopApp:packageReleaseExe` | `desktopApp\build\compose\binaries\main-release\exe\Olcbox-1.0.0.exe` |
-| Windows MSI | `.\gradlew.bat :desktopApp:packageReleaseMsi` | `desktopApp\build\compose\binaries\main-release\msi\Olcbox-1.0.0.msi` |
-| Linux AppImage | `./gradlew :desktopApp:packageReleaseLinuxAppImage` | `desktopApp/build/compose/binaries/main-release/appimage/Olcbox-1.0.0-amd64.AppImage` |
+| macOS DMG | `./gradlew :desktopApp:packageReleaseDmg` | `desktopApp/build/compose/binaries/main-release/dmg/MaestroVpn-1.0.0.dmg` |
+| Windows EXE | `.\gradlew.bat :desktopApp:packageReleaseExe` | `desktopApp\build\compose\binaries\main-release\exe\MaestroVpn-1.0.0.exe` |
+| Windows MSI | `.\gradlew.bat :desktopApp:packageReleaseMsi` | `desktopApp\build\compose\binaries\main-release\msi\MaestroVpn-1.0.0.msi` |
+| Linux AppImage | `./gradlew :desktopApp:packageReleaseLinuxAppImage` | `desktopApp/build/compose/binaries/main-release/appimage/MaestroVpn-1.0.0-amd64.AppImage` |
 
 ## Native Assets
 
@@ -138,7 +138,7 @@ $env:OLCRTC_REPO="C:\path\to\olcrtc"
 - Android release builds require `keystore.properties` in the repository root.
 - macOS DMG output is not notarized unless signing/notarization is configured separately.
 - Windows installers must be built on Windows with `jpackage` and WiX available.
-- Linux TUN interface: `olcbox0`.
+- Linux TUN interface: `maestrovpn0`.
 - Linux stop removes policy routes and reverts `systemd-resolved` settings when `resolvectl` is available.
 
 `keystore.properties`:
@@ -155,6 +155,6 @@ Linux privilege override:
 Linux privilege override:
 
 ```bash
-OLCBOX_LINUX_PRIVILEGE=sudo ./gradlew :desktopApp:run
-OLCBOX_LINUX_PRIVILEGE=pkexec ./gradlew :desktopApp:run
+MAESTROVPN_LINUX_PRIVILEGE=sudo ./gradlew :desktopApp:run
+MAESTROVPN_LINUX_PRIVILEGE=pkexec ./gradlew :desktopApp:run
 ```

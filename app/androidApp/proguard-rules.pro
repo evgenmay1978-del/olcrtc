@@ -1,3 +1,3 @@
--keep class org.olcbox.app.vpn.service.OlcboxVpnService {
+-keep class org.maestrovpn.app.vpn.service.MaestroVpnVpnService {
     *;
 }

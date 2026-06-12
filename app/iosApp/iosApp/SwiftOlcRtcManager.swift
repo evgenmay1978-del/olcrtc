@@ -179,7 +179,7 @@ final class SwiftOlcRtcManager: NSObject, @unchecked Sendable, IosOlcRtcBridge {
             guard existingTask == .invalid else { return }
 
             var newTask: UIBackgroundTaskIdentifier = .invalid
-            newTask = UIApplication.shared.beginBackgroundTask(withName: "Olcbox SOCKS") { [weak self] in
+            newTask = UIApplication.shared.beginBackgroundTask(withName: "MaestroVpn SOCKS") { [weak self] in
                 self?.endBackgroundTaskIfNeeded()
             }
 

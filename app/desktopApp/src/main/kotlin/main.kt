@@ -75,35 +75,35 @@ import kotlinx.coroutines.delay
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
-import org.olcbox.app.CurrentAppInfo
-import org.olcbox.app.data.datasource.JvmLocationsDataSourceImpl
-import org.olcbox.app.data.datasource.LocationsRepositoryImpl
-import org.olcbox.app.data.exporter.JvmLogExporter
-import org.olcbox.app.data.identity.PersistentDeviceIdentityProvider
-import org.olcbox.app.data.importer.JvmConfigImporter
-import org.olcbox.app.data.share.ConfigShareService
-import org.olcbox.app.data.share.SubscriptionShareItem
-import org.olcbox.app.ui.OlcboxAppContent
-import org.olcbox.app.ui.components.ApplicationSocksProxySettings
-import org.olcbox.app.ui.components.ApplicationSettingsSheet
-import org.olcbox.app.ui.components.ApplicationUpdateOfferSheet
-import org.olcbox.app.ui.features.home.HomeScreenViewModel
-import org.olcbox.app.ui.features.locations.LocationItem
-import org.olcbox.app.ui.features.locations.LocationViewModel
-import org.olcbox.app.ui.navigation.AppScreen
-import org.olcbox.app.ui.theme.AppTheme
-import org.olcbox.app.update.AppUpdateInfo
-import org.olcbox.app.update.AppUpdateSettings
-import org.olcbox.app.update.AppUpdateService
-import org.olcbox.app.update.JvmUpdateInstaller
-import org.olcbox.app.update.JvmUpdateSettingsStore
-import org.olcbox.app.update.identity
-import org.olcbox.app.update.isDownloaded
-import org.olcbox.app.update.isUpdateCheckDue
-import org.olcbox.app.update.shouldShowOffer
-import org.olcbox.app.vpn.DesktopSocksProxySettings
-import org.olcbox.app.vpn.DesktopVpnManager
-import org.olcbox.app.vpn.JvmDesktopSocksProxySettingsStore
+import ru.maestrovpn.app.CurrentAppInfo
+import ru.maestrovpn.app.data.datasource.JvmLocationsDataSourceImpl
+import ru.maestrovpn.app.data.datasource.LocationsRepositoryImpl
+import ru.maestrovpn.app.data.exporter.JvmLogExporter
+import ru.maestrovpn.app.data.identity.PersistentDeviceIdentityProvider
+import ru.maestrovpn.app.data.importer.JvmConfigImporter
+import ru.maestrovpn.app.data.share.ConfigShareService
+import ru.maestrovpn.app.data.share.SubscriptionShareItem
+import ru.maestrovpn.app.ui.MaestroVpnAppContent
+import ru.maestrovpn.app.ui.components.ApplicationSocksProxySettings
+import ru.maestrovpn.app.ui.components.ApplicationSettingsSheet
+import ru.maestrovpn.app.ui.components.ApplicationUpdateOfferSheet
+import ru.maestrovpn.app.ui.features.home.HomeScreenViewModel
+import ru.maestrovpn.app.ui.features.locations.LocationItem
+import ru.maestrovpn.app.ui.features.locations.LocationViewModel
+import ru.maestrovpn.app.ui.navigation.AppScreen
+import ru.maestrovpn.app.ui.theme.AppTheme
+import ru.maestrovpn.app.update.AppUpdateInfo
+import ru.maestrovpn.app.update.AppUpdateSettings
+import ru.maestrovpn.app.update.AppUpdateService
+import ru.maestrovpn.app.update.JvmUpdateInstaller
+import ru.maestrovpn.app.update.JvmUpdateSettingsStore
+import ru.maestrovpn.app.update.identity
+import ru.maestrovpn.app.update.isDownloaded
+import ru.maestrovpn.app.update.isUpdateCheckDue
+import ru.maestrovpn.app.update.shouldShowOffer
+import ru.maestrovpn.app.vpn.DesktopSocksProxySettings
+import ru.maestrovpn.app.vpn.DesktopVpnManager
+import ru.maestrovpn.app.vpn.JvmDesktopSocksProxySettingsStore
 
 private class DesktopAppDependencies {
     private val locationsDataSource = JvmLocationsDataSourceImpl()
@@ -133,7 +133,7 @@ private class DesktopAppDependencies {
     }
 }
 
-private const val WINDOWS_ELEVATED_START_ARGUMENT = "--olcbox-start-vpn-after-elevation"
+private const val WINDOWS_ELEVATED_START_ARGUMENT = "--maestrovpn-start-vpn-after-elevation"
 
 fun main(args: Array<String>) = application {
     // Configure JNA to find native libraries in resources
@@ -186,7 +186,7 @@ fun main(args: Array<String>) = application {
                             updateMessage = "${info.channel.name} update found: ${info.version}"
                         } else {
                             updateOffer = null
-                            updateMessage = "Olcbox is up to date"
+                            updateMessage = "MaestroVpn is up to date"
                         }
                     } else {
                         updateOffer = null
@@ -275,7 +275,7 @@ fun main(args: Array<String>) = application {
     )
 
     Window(
-        title = "olcbox",
+        title = "maestrovpn",
         visible = isWindowVisible,
         state = rememberWindowState(width = 430.dp, height = 780.dp),
         onCloseRequest = {
@@ -302,7 +302,7 @@ fun main(args: Array<String>) = application {
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
-                OlcboxAppContent(
+                MaestroVpnAppContent(
                     homeViewModel = dependencies.homeViewModel,
                     locationViewModel = dependencies.locationViewModel,
                     currentScreen = currentScreen,
@@ -694,14 +694,14 @@ private fun desktopSubscriptionItems(items: List<LocationItem>): List<Subscripti
 }
 
 private fun chooseConfigFile(owner: Frame): File? {
-    val dialog = FileDialog(owner, "Import Olcbox Config", FileDialog.LOAD)
+    val dialog = FileDialog(owner, "Import MaestroVpn Config", FileDialog.LOAD)
     dialog.isVisible = true
 
     return dialog.files.firstOrNull()
 }
 
 private fun chooseSaveFile(owner: Frame, defaultName: String): File? {
-    val dialog = FileDialog(owner, "Save Olcbox Logs", FileDialog.SAVE)
+    val dialog = FileDialog(owner, "Save MaestroVpn Logs", FileDialog.SAVE)
     dialog.file = defaultName
     dialog.isVisible = true
 

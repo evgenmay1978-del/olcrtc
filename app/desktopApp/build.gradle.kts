@@ -115,7 +115,7 @@ val generatedNativeResources = layout.buildDirectory.dir("generated/desktopNativ
 val hevSocks5TunnelSourceDir = rootProject.layout.projectDirectory.dir("androidApp/src/main/jni/hev-socks5-tunnel")
 val currentBuildOs = OperatingSystem.current()
 val desktopPackageName = "MaestroVPN"
-val desktopPackageVersion = providers.gradleProperty("olcbox.version").orElse("1.0.0").get()
+val desktopPackageVersion = providers.gradleProperty("maestrovpn.version").orElse("1.0.0").get()
 val tun2SocksVersion = "2.6.0"
 val wintunVersion = "0.14.1"
 val currentBuildTargetFormats = when {
@@ -470,14 +470,14 @@ compose.desktop {
             }
             windows {
                 iconFile.set(project.file("appIcons/WindowsIcon.ico"))
-                menuGroup = "Olcbox"
+                menuGroup = "MaestroVpn"
                 shortcut = true
                 dirChooser = true
                 upgradeUuid = "6f0aaf78-dbed-4745-9d95-9e63f10a30de"
             }
             macOS {
                 iconFile.set(project.file("appIcons/MacosIcon.icns"))
-                bundleID = "org.olcbox.app.desktopApp"
+                bundleID = "ru.maestrovpn.app.desktopApp"
             }
         }
     }
@@ -522,17 +522,17 @@ if (currentBuildOs.isLinux) {
             APPRUN
             chmod +x "${'$'}target_dir/AppRun"
 
-            cat > "${'$'}target_dir/org.olcbox.app.desktopApp.desktop" <<'DESKTOP'
+            cat > "${'$'}target_dir/ru.maestrovpn.app.desktopApp.desktop" <<'DESKTOP'
             [Desktop Entry]
             Type=Application
             Name=$desktopPackageName
             Exec=$desktopPackageName
-            Icon=olcbox
+            Icon=maestrovpn
             Categories=Network;Utility;
             Terminal=false
             DESKTOP
 
-            cp "${'$'}icon_file" "${'$'}target_dir/olcbox.png"
+            cp "${'$'}icon_file" "${'$'}target_dir/maestrovpn.png"
             """.trimIndent(),
             "prepareReleaseLinuxAppDir",
             jpackageAppDir.get().asFile.absolutePath,

@@ -1,4 +1,4 @@
-name: Build Olcbox Releases
+name: Build MaestroVpn Releases
 
 on:
   workflow_dispatch:
@@ -9,14 +9,14 @@ permissions:
   contents: read
 
 env:
-  OLCBOX_VERSION_MAJOR_MINOR: "1.0"
+  MAESTROVPN_VERSION_MAJOR_MINOR: "1.0"
   # Keep release builds on the matching olcrtc ref until the universal carrier
   # changes land in olcrtc master.
-  OLCBOX_OLCRTC_REF: "master"
-  # The alananisimov/olcbox workflow was recreated after 1.0.69, so
+  MAESTROVPN_OLCRTC_REF: "master"
+  # The alananisimov/maestrovpn workflow was recreated after 1.0.69, so
   # github.run_number restarted. Run #6 must publish Android versionCode 70.
-  OLCBOX_RELEASE_RUN_NUMBER_BASE: "5"
-  OLCBOX_RELEASE_PATCH_BASE: "69"
+  MAESTROVPN_RELEASE_RUN_NUMBER_BASE: "5"
+  MAESTROVPN_RELEASE_PATCH_BASE: "69"
 
 jobs:
   release_version:
@@ -32,24 +32,24 @@ jobs:
       - name: Resolve release version
         id: version
         run: |
-          patch=$((OLCBOX_RELEASE_PATCH_BASE + GITHUB_RUN_NUMBER - OLCBOX_RELEASE_RUN_NUMBER_BASE))
+          patch=$((MAESTROVPN_RELEASE_PATCH_BASE + GITHUB_RUN_NUMBER - MAESTROVPN_RELEASE_RUN_NUMBER_BASE))
 
-          if [ "$patch" -le "$OLCBOX_RELEASE_PATCH_BASE" ]; then
-            echo "Computed Android versionCode ${patch} is not greater than ${OLCBOX_RELEASE_PATCH_BASE}" >&2
+          if [ "$patch" -le "$MAESTROVPN_RELEASE_PATCH_BASE" ]; then
+            echo "Computed Android versionCode ${patch} is not greater than ${MAESTROVPN_RELEASE_PATCH_BASE}" >&2
             exit 1
           fi
 
-          echo "version=${OLCBOX_VERSION_MAJOR_MINOR}.${patch}" >> "$GITHUB_OUTPUT"
+          echo "version=${MAESTROVPN_VERSION_MAJOR_MINOR}.${patch}" >> "$GITHUB_OUTPUT"
           echo "version_code=${patch}" >> "$GITHUB_OUTPUT"
 
           if [ "${GITHUB_REF_NAME}" = "universal-carrier" ]; then
-            echo "olcrtc_ref=${OLCBOX_OLCRTC_REF}" >> "$GITHUB_OUTPUT"
+            echo "olcrtc_ref=${MAESTROVPN_OLCRTC_REF}" >> "$GITHUB_OUTPUT"
             echo "nightly_tag=nightly-universal-carrier" >> "$GITHUB_OUTPUT"
-            echo "nightly_title=Nightly Olcbox universal-carrier builds" >> "$GITHUB_OUTPUT"
+            echo "nightly_title=Nightly MaestroVpn universal-carrier builds" >> "$GITHUB_OUTPUT"
           else
-            echo "olcrtc_ref=${OLCBOX_OLCRTC_REF}" >> "$GITHUB_OUTPUT"
+            echo "olcrtc_ref=${MAESTROVPN_OLCRTC_REF}" >> "$GITHUB_OUTPUT"
             echo "nightly_tag=nightly" >> "$GITHUB_OUTPUT"
-            echo "nightly_title=Nightly Olcbox builds" >> "$GITHUB_OUTPUT"
+            echo "nightly_title=Nightly MaestroVpn builds" >> "$GITHUB_OUTPUT"
           fi
 
   build-windows:
@@ -58,17 +58,17 @@ jobs:
     permissions:
       contents: read
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
       WINDOWS_CODESIGN_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_BASE64 }}
       WINDOWS_CODESIGN_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_PASSWORD }}
       WINDOWS_CODESIGN_TIMESTAMP_URL: ${{ vars.WINDOWS_CODESIGN_TIMESTAMP_URL || 'http://timestamp.digicert.com' }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
         with:
-          path: olcbox
+          path: maestrovpn
 
       - name: Checkout olcrtc
         uses: actions/checkout@v6
@@ -93,14 +93,14 @@ jobs:
 
       - name: Build Windows installers and portable zip
         shell: pwsh
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           $env:OLCRTC_REPO="${{ github.workspace }}\olcrtc"
-          .\gradlew.bat "-Polcbox.version=$env:OLCBOX_VERSION" :desktopApp:packageReleaseExe :desktopApp:packageReleaseMsi :desktopApp:packageReleasePortableZip --stacktrace
+          .\gradlew.bat "-Pmaestrovpn.version=$env:MAESTROVPN_VERSION" :desktopApp:packageReleaseExe :desktopApp:packageReleaseMsi :desktopApp:packageReleasePortableZip --stacktrace
 
       - name: Prepare asset
         shell: pwsh
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           $exe = Get-ChildItem "desktopApp/build/compose/binaries/main-release/exe/*.exe" | Select-Object -First 1
@@ -114,17 +114,17 @@ jobs:
               throw "Portable app image not found under $appRoot"
             }
             New-Item -ItemType Directory -Force $portableDir | Out-Null
-            $portableZip = Join-Path $portableDir "Olcbox-windows-amd64-portable.zip"
+            $portableZip = Join-Path $portableDir "MaestroVpn-windows-amd64-portable.zip"
             Compress-Archive -Path $appImage.FullName -DestinationPath $portableZip -Force
             $zip = Get-Item $portableZip
           }
-          Copy-Item $exe.FullName "dist/Olcbox-${env:OLCBOX_VERSION}-windows-amd64.exe"
-          Copy-Item $msi.FullName "dist/Olcbox-${env:OLCBOX_VERSION}-windows-amd64.msi"
-          Copy-Item $zip.FullName "dist/Olcbox-${env:OLCBOX_VERSION}-windows-amd64-portable.zip"
+          Copy-Item $exe.FullName "dist/MaestroVpn-${env:MAESTROVPN_VERSION}-windows-amd64.exe"
+          Copy-Item $msi.FullName "dist/MaestroVpn-${env:MAESTROVPN_VERSION}-windows-amd64.msi"
+          Copy-Item $zip.FullName "dist/MaestroVpn-${env:MAESTROVPN_VERSION}-windows-amd64-portable.zip"
 
       - name: Sign Windows release assets
         shell: pwsh
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CODESIGN_CERTIFICATE_BASE64) -or
               [string]::IsNullOrWhiteSpace($env:WINDOWS_CODESIGN_CERTIFICATE_PASSWORD)) {
@@ -140,7 +140,7 @@ jobs:
             throw "signtool.exe was not found on the Windows runner"
           }
 
-          $certPath = Join-Path $env:RUNNER_TEMP "olcbox-windows-codesign.pfx"
+          $certPath = Join-Path $env:RUNNER_TEMP "maestrovpn-windows-codesign.pfx"
           [IO.File]::WriteAllBytes(
             $certPath,
             [Convert]::FromBase64String(($env:WINDOWS_CODESIGN_CERTIFICATE_BASE64 -replace '\s', ''))
@@ -159,13 +159,13 @@ jobs:
             }
           }
 
-          $exeAsset = Get-ChildItem "dist/Olcbox-*-windows-amd64.exe" | Select-Object -First 1
-          $msiAsset = Get-ChildItem "dist/Olcbox-*-windows-amd64.msi" | Select-Object -First 1
+          $exeAsset = Get-ChildItem "dist/MaestroVpn-*-windows-amd64.exe" | Select-Object -First 1
+          $msiAsset = Get-ChildItem "dist/MaestroVpn-*-windows-amd64.msi" | Select-Object -First 1
           Sign-File $exeAsset.FullName
           Sign-File $msiAsset.FullName
 
-          $portableZip = (Get-ChildItem "dist/Olcbox-*-windows-amd64-portable.zip" | Select-Object -First 1).FullName
-          $portableDir = Join-Path $env:RUNNER_TEMP "olcbox-portable-sign"
+          $portableZip = (Get-ChildItem "dist/MaestroVpn-*-windows-amd64-portable.zip" | Select-Object -First 1).FullName
+          $portableDir = Join-Path $env:RUNNER_TEMP "maestrovpn-portable-sign"
           Remove-Item $portableDir -Recurse -Force -ErrorAction SilentlyContinue
           Expand-Archive -Path $portableZip -DestinationPath $portableDir
           Get-ChildItem $portableDir -Recurse -Filter *.exe | ForEach-Object {
@@ -177,11 +177,11 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Olcbox-windows-amd64
+          name: MaestroVpn-windows-amd64
           path: |
-            olcbox/dist/Olcbox-*-windows-amd64.exe
-            olcbox/dist/Olcbox-*-windows-amd64.msi
-            olcbox/dist/Olcbox-*-windows-amd64-portable.zip
+            maestrovpn/dist/MaestroVpn-*-windows-amd64.exe
+            maestrovpn/dist/MaestroVpn-*-windows-amd64.msi
+            maestrovpn/dist/MaestroVpn-*-windows-amd64-portable.zip
 
   build-macos:
     needs: release_version
@@ -197,14 +197,14 @@ jobs:
     permissions:
       contents: read
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
         with:
-          path: olcbox
+          path: maestrovpn
 
       - name: Checkout olcrtc
         uses: actions/checkout@v6
@@ -227,22 +227,22 @@ jobs:
           cache-dependency-path: olcrtc/go.sum
 
       - name: Build macOS DMG
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           export OLCRTC_REPO="${{ github.workspace }}/olcrtc"
-          ./gradlew -Polcbox.version="${OLCBOX_VERSION}" :desktopApp:packageReleaseDmg --stacktrace
+          ./gradlew -Pmaestrovpn.version="${MAESTROVPN_VERSION}" :desktopApp:packageReleaseDmg --stacktrace
 
       - name: Prepare asset
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           mkdir -p dist
-          cp desktopApp/build/compose/binaries/main-release/dmg/*.dmg "dist/Olcbox-${OLCBOX_VERSION}-macos-${{ matrix.arch }}.dmg"
+          cp desktopApp/build/compose/binaries/main-release/dmg/*.dmg "dist/MaestroVpn-${MAESTROVPN_VERSION}-macos-${{ matrix.arch }}.dmg"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Olcbox-macos-${{ matrix.arch }}-dmg
-          path: olcbox/dist/Olcbox-*-macos-${{ matrix.arch }}.dmg
+          name: MaestroVpn-macos-${{ matrix.arch }}-dmg
+          path: maestrovpn/dist/MaestroVpn-*-macos-${{ matrix.arch }}.dmg
 
   build-linux:
     needs: release_version
@@ -250,14 +250,14 @@ jobs:
     permissions:
       contents: read
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
         with:
-          path: olcbox
+          path: maestrovpn
 
       - name: Checkout olcrtc
         uses: actions/checkout@v6
@@ -291,24 +291,24 @@ jobs:
           chmod +x /tmp/appimagetool.AppImage
 
       - name: Build Linux AppImage
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           export OLCRTC_REPO="${{ github.workspace }}/olcrtc"
           export APPIMAGETOOL=/tmp/appimagetool.AppImage
           export APPIMAGE_EXTRACT_AND_RUN=1
-          ./gradlew -Polcbox.version="${OLCBOX_VERSION}" :desktopApp:packageReleaseLinuxAppImage --stacktrace
+          ./gradlew -Pmaestrovpn.version="${MAESTROVPN_VERSION}" :desktopApp:packageReleaseLinuxAppImage --stacktrace
 
       - name: Prepare asset
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           mkdir -p dist
-          cp desktopApp/build/compose/binaries/main-release/appimage/*.AppImage "dist/Olcbox-${OLCBOX_VERSION}-linux-amd64.AppImage"
+          cp desktopApp/build/compose/binaries/main-release/appimage/*.AppImage "dist/MaestroVpn-${MAESTROVPN_VERSION}-linux-amd64.AppImage"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Olcbox-linux-amd64-appimage
-          path: olcbox/dist/Olcbox-*-linux-amd64.AppImage
+          name: MaestroVpn-linux-amd64-appimage
+          path: maestrovpn/dist/MaestroVpn-*-linux-amd64.AppImage
 
   build-android:
     needs: release_version
@@ -317,8 +317,8 @@ jobs:
       contents: read
 
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
       ANDROID_NDK_VERSION: "28.2.13676358"
       ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
       ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
@@ -326,10 +326,10 @@ jobs:
       ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
         with:
-          path: olcbox
+          path: maestrovpn
 
       - name: Checkout olcrtc
         uses: actions/checkout@v6
@@ -375,7 +375,7 @@ jobs:
           gomobile init
 
       - name: Configure Android release signing
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           if [ -n "${ANDROID_RELEASE_KEYSTORE_BASE64}" ] &&
              [ -n "${ANDROID_RELEASE_STORE_PASSWORD}" ] &&
@@ -395,15 +395,15 @@ jobs:
           fi
 
       - name: Build production APK
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           export OLCRTC_REPO="${{ github.workspace }}/olcrtc"
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
           export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
-          ./gradlew -Polcbox.version="${OLCBOX_VERSION}" -Polcbox.versionCode="${OLCBOX_VERSION_CODE}" :sharedUI:jvmTest :androidApp:assembleRelease --stacktrace
+          ./gradlew -Pmaestrovpn.version="${MAESTROVPN_VERSION}" -Pmaestrovpn.versionCode="${MAESTROVPN_VERSION_CODE}" :sharedUI:jvmTest :androidApp:assembleRelease --stacktrace
 
       - name: Prepare universal Android release asset
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           mkdir -p dist
           release_apk="$(find androidApp/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | sort | head -n 1)"
@@ -411,33 +411,33 @@ jobs:
             echo "Android release APK was not found" >&2
             exit 1
           fi
-          cp "${release_apk}" "dist/Olcbox-${OLCBOX_VERSION}-android-release.apk"
+          cp "${release_apk}" "dist/MaestroVpn-${MAESTROVPN_VERSION}-android-release.apk"
 
       - name: Build armeabi-v7a production APK
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           export OLCRTC_REPO="${{ github.workspace }}/olcrtc"
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
           export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
-          ./gradlew -Polcbox.version="${OLCBOX_VERSION}" -Polcbox.versionCode="${OLCBOX_VERSION_CODE}" -Polcbox.android.abiFilters=armeabi-v7a :androidApp:clean :androidApp:assembleRelease --stacktrace
+          ./gradlew -Pmaestrovpn.version="${MAESTROVPN_VERSION}" -Pmaestrovpn.versionCode="${MAESTROVPN_VERSION_CODE}" -Pmaestrovpn.android.abiFilters=armeabi-v7a :androidApp:clean :androidApp:assembleRelease --stacktrace
 
       - name: Prepare armeabi-v7a Android release asset
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           release_apk="$(find androidApp/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | sort | head -n 1)"
           if [ -z "${release_apk}" ]; then
             echo "Android armeabi-v7a release APK was not found" >&2
             exit 1
           fi
-          cp "${release_apk}" "dist/Olcbox-${OLCBOX_VERSION}-android-armeabi-v7a-release.apk"
+          cp "${release_apk}" "dist/MaestroVpn-${MAESTROVPN_VERSION}-android-armeabi-v7a-release.apk"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Olcbox-android-apks
+          name: MaestroVpn-android-apks
           path: |
-            olcbox/dist/Olcbox-*-android-release.apk
-            olcbox/dist/Olcbox-*-android-armeabi-v7a-release.apk
+            maestrovpn/dist/MaestroVpn-*-android-release.apk
+            maestrovpn/dist/MaestroVpn-*-android-armeabi-v7a-release.apk
 
   build-ios:
     needs: release_version
@@ -446,14 +446,14 @@ jobs:
       contents: read
 
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
         with:
-          path: olcbox
+          path: maestrovpn
 
       - name: Checkout olcrtc
         uses: actions/checkout@v6
@@ -494,7 +494,7 @@ jobs:
           gomobile init
 
       - name: Build unsigned iOS app
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           export OLCRTC_REPO="${{ github.workspace }}/olcrtc"
           xcodebuild \
@@ -509,7 +509,7 @@ jobs:
             build
 
       - name: Package unsigned IPA
-        working-directory: olcbox
+        working-directory: maestrovpn
         run: |
           app_path="build/ios-ipa/DerivedData/Build/Products/Release-iphoneos/iosApp.app"
           if [ ! -d "$app_path" ]; then
@@ -517,20 +517,20 @@ jobs:
             exit 1
           fi
 
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${OLCBOX_VERSION}" "$app_path/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${OLCBOX_VERSION_CODE}" "$app_path/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${MAESTROVPN_VERSION}" "$app_path/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${MAESTROVPN_VERSION_CODE}" "$app_path/Info.plist"
 
           rm -rf build/ios-ipa/package dist
           mkdir -p build/ios-ipa/package/Payload dist
           cp -R "$app_path" build/ios-ipa/package/Payload/
-          (cd build/ios-ipa/package && /usr/bin/zip -qry "${GITHUB_WORKSPACE}/olcbox/dist/Olcbox-${OLCBOX_VERSION}-ios-unsigned.ipa" Payload)
-          unzip -t "dist/Olcbox-${OLCBOX_VERSION}-ios-unsigned.ipa"
+          (cd build/ios-ipa/package && /usr/bin/zip -qry "${GITHUB_WORKSPACE}/maestrovpn/dist/MaestroVpn-${MAESTROVPN_VERSION}-ios-unsigned.ipa" Payload)
+          unzip -t "dist/MaestroVpn-${MAESTROVPN_VERSION}-ios-unsigned.ipa"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Olcbox-ios-unsigned-ipa
-          path: olcbox/dist/Olcbox-${{ env.OLCBOX_VERSION }}-ios-unsigned.ipa
+          name: MaestroVpn-ios-unsigned-ipa
+          path: maestrovpn/dist/MaestroVpn-${{ env.MAESTROVPN_VERSION }}-ios-unsigned.ipa
 
   publish-nightly:
     runs-on: ubuntu-latest
@@ -549,14 +549,14 @@ jobs:
       group: publish-${{ github.repository }}-${{ needs.release_version.outputs.nightly_tag }}
       cancel-in-progress: false
     env:
-      OLCBOX_VERSION: ${{ needs.release_version.outputs.version }}
-      OLCBOX_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
-      OLCBOX_OLCRTC_REF: ${{ needs.release_version.outputs.olcrtc_ref }}
-      OLCBOX_NIGHTLY_TAG: ${{ needs.release_version.outputs.nightly_tag }}
-      OLCBOX_NIGHTLY_TITLE: ${{ needs.release_version.outputs.nightly_title }}
+      MAESTROVPN_VERSION: ${{ needs.release_version.outputs.version }}
+      MAESTROVPN_VERSION_CODE: ${{ needs.release_version.outputs.version_code }}
+      MAESTROVPN_OLCRTC_REF: ${{ needs.release_version.outputs.olcrtc_ref }}
+      MAESTROVPN_NIGHTLY_TAG: ${{ needs.release_version.outputs.nightly_tag }}
+      MAESTROVPN_NIGHTLY_TITLE: ${{ needs.release_version.outputs.nightly_title }}
 
     steps:
-      - name: Checkout olcbox
+      - name: Checkout maestrovpn
         uses: actions/checkout@v6
 
       - name: Clear release staging dir
@@ -585,9 +585,9 @@ jobs:
             echo
             echo "- Source commit: \`${GITHUB_SHA}\`"
             echo "- Source branch: \`${GITHUB_REF_NAME}\`"
-            echo "- olcrtc branch: \`${OLCBOX_OLCRTC_REF}\`"
-            echo "- App version: \`${OLCBOX_VERSION}\`"
-            echo "- Android versionCode: \`${OLCBOX_VERSION_CODE}\`"
+            echo "- olcrtc branch: \`${MAESTROVPN_OLCRTC_REF}\`"
+            echo "- App version: \`${MAESTROVPN_VERSION}\`"
+            echo "- Android versionCode: \`${MAESTROVPN_VERSION_CODE}\`"
             echo "- Android APKs: universal and \`armeabi-v7a\`"
             echo "- Workflow: \`.github/workflows/release.yml\`"
             echo "- Workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -615,16 +615,16 @@ jobs:
             exit 1
           fi
 
-          if gh release view "$OLCBOX_NIGHTLY_TAG" >/dev/null 2>&1; then
-            gh release delete "$OLCBOX_NIGHTLY_TAG" --yes --cleanup-tag
+          if gh release view "$MAESTROVPN_NIGHTLY_TAG" >/dev/null 2>&1; then
+            gh release delete "$MAESTROVPN_NIGHTLY_TAG" --yes --cleanup-tag
           fi
 
-          git tag -f "$OLCBOX_NIGHTLY_TAG" "$GITHUB_SHA"
-          git push --force origin "refs/tags/$OLCBOX_NIGHTLY_TAG"
+          git tag -f "$MAESTROVPN_NIGHTLY_TAG" "$GITHUB_SHA"
+          git push --force origin "refs/tags/$MAESTROVPN_NIGHTLY_TAG"
 
-          gh release create "$OLCBOX_NIGHTLY_TAG" \
+          gh release create "$MAESTROVPN_NIGHTLY_TAG" \
             --target "$GITHUB_SHA" \
-            --title "$OLCBOX_NIGHTLY_TITLE" \
+            --title "$MAESTROVPN_NIGHTLY_TITLE" \
             --notes-file release-notes.md \
             --prerelease \
             --draft
@@ -635,7 +635,7 @@ jobs:
           for asset in "${assets[@]}"; do
             echo "Uploading ${asset}"
             for attempt in 1 2 3; do
-              if gh release upload "$OLCBOX_NIGHTLY_TAG" "$asset" --clobber; then
+              if gh release upload "$MAESTROVPN_NIGHTLY_TAG" "$asset" --clobber; then
                 break
               fi
 
@@ -649,4 +649,4 @@ jobs:
             done
           done
 
-          gh release edit "$OLCBOX_NIGHTLY_TAG" --draft=false --prerelease
+          gh release edit "$MAESTROVPN_NIGHTLY_TAG" --draft=false --prerelease

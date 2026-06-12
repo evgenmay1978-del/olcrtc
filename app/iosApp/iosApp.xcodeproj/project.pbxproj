@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9A0000010000000000000001 /* OlcboxIosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* OlcboxIosApp.swift */; };
+		9A0000010000000000000001 /* MaestroVpnIosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000011 /* MaestroVpnIosApp.swift */; };
 		9A0000010000000000000002 /* SwiftPlatformBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000012 /* SwiftPlatformBridge.swift */; };
 		9A0000010000000000000003 /* SwiftOlcRtcManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0000010000000000000013 /* SwiftOlcRtcManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		9A0000010000000000000010 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9A0000010000000000000011 /* OlcboxIosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OlcboxIosApp.swift; sourceTree = "<group>"; };
+		9A0000010000000000000011 /* MaestroVpnIosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaestroVpnIosApp.swift; sourceTree = "<group>"; };
 		9A0000010000000000000012 /* SwiftPlatformBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftPlatformBridge.swift; sourceTree = "<group>"; };
 		9A0000010000000000000013 /* SwiftOlcRtcManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftOlcRtcManager.swift; sourceTree = "<group>"; };
 		9A0000010000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -43,7 +43,7 @@
 		9A0000010000000000000031 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
-				9A0000010000000000000011 /* OlcboxIosApp.swift */,
+				9A0000010000000000000011 /* MaestroVpnIosApp.swift */,
 				9A0000010000000000000012 /* SwiftPlatformBridge.swift */,
 				9A0000010000000000000013 /* SwiftOlcRtcManager.swift */,
 				9A0000010000000000000014 /* Info.plist */,
@@ -144,7 +144,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nexport PATH=\"$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nif [ -z \"$ARCHS\" ] || [ \"$ARCHS\" = \"undefined_arch\" ]; then\n  export ARCHS=arm64\nfi\nGRADLE_VERSION_ARGS=\"\"\nif [ -n \"$OLCBOX_VERSION\" ]; then\n  GRADLE_VERSION_ARGS=\"-Polcbox.version=$OLCBOX_VERSION\"\nfi\ncd \"$SRCROOT/..\"\n./gradlew $GRADLE_VERSION_ARGS :sharedUI:buildOlcrtcIosXcframework :sharedUI:embedAndSignAppleFrameworkForXcode --no-configuration-cache\n";
+			shellScript = "set -e\nexport PATH=\"$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nif [ -z \"$ARCHS\" ] || [ \"$ARCHS\" = \"undefined_arch\" ]; then\n  export ARCHS=arm64\nfi\nGRADLE_VERSION_ARGS=\"\"\nif [ -n \"$MAESTROVPN_VERSION\" ]; then\n  GRADLE_VERSION_ARGS=\"-Pmaestrovpn.version=$MAESTROVPN_VERSION\"\nfi\ncd \"$SRCROOT/..\"\n./gradlew $GRADLE_VERSION_ARGS :sharedUI:buildOlcrtcIosXcframework :sharedUI:embedAndSignAppleFrameworkForXcode --no-configuration-cache\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -153,7 +153,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9A0000010000000000000001 /* OlcboxIosApp.swift in Sources */,
+				9A0000010000000000000001 /* MaestroVpnIosApp.swift in Sources */,
 				9A0000010000000000000002 /* SwiftPlatformBridge.swift in Sources */,
 				9A0000010000000000000003 /* SwiftOlcRtcManager.swift in Sources */,
 			);
@@ -254,7 +254,7 @@
 					"-framework",
 					OlcRtcMobile,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.olcbox.app.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = org.maestrovpn.app.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -300,7 +300,7 @@
 					"-framework",
 					OlcRtcMobile,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.olcbox.app.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = org.maestrovpn.app.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

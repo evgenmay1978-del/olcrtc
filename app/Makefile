@@ -1,4 +1,4 @@
-# Olcbox macOS VPN Client Build Automation
+# MaestroVpn macOS VPN Client Build Automation
 # This Makefile handles building KMP and setting up Xcode project
 
 .PHONY: all framework create-targets setup-project run
@@ -55,7 +55,7 @@ run:
 
 # Help
 help:
-	@echo "Olcbox macOS VPN Client Build System"
+	@echo "MaestroVpn macOS VPN Client Build System"
 	@echo "====================================="
 	@echo ""
 	@echo "Available targets:"

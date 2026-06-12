@@ -61,7 +61,7 @@
         </activity>
 
         <activity
-            android:name="org.olcbox.app.ui.activities.QrScannerActivity"
+            android:name="ru.maestrovpn.app.ui.activities.QrScannerActivity"
             android:screenOrientation="portrait"
             android:exported="false" />
 
@@ -76,13 +76,13 @@
         </provider>
 
         <activity
-            android:name="org.olcbox.app.vpn.service.CaptchaActivity"
+            android:name="ru.maestrovpn.app.vpn.service.CaptchaActivity"
             android:theme="@android:style/Theme.DeviceDefault.Light.Dialog"
             android:excludeFromRecents="true"
             android:exported="false" />
 
         <service
-            android:name="org.olcbox.app.vpn.service.OlcboxVpnService"
+            android:name="ru.maestrovpn.app.vpn.service.MaestroVpnVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false"
             android:foregroundServiceType="specialUse">

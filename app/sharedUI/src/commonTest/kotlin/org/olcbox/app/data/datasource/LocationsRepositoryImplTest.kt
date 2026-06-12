@@ -426,8 +426,8 @@ class LocationsRepositoryImplTest {
         )
         assertEquals(
             listOf(
-                LocationConfig.TRANSPORT_VP8CHANNEL,
                 LocationConfig.TRANSPORT_DATACHANNEL,
+                LocationConfig.TRANSPORT_VP8CHANNEL,
                 LocationConfig.TRANSPORT_SEICHANNEL
             ),
             LocationConfig.supportedTransportsForProvider(LocationConfig.PROVIDER_JITSI)

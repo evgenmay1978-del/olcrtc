@@ -42,9 +42,9 @@ interface LocationsDataSource {
 
 internal expect fun createProxyHttpClient(
     subscriptionProxy: SubscriptionFetchProxy? = null,
-    connectTimeoutMs: Long = 3_000,
-    requestTimeoutMs: Long = 8_000,
-    socketTimeoutMs: Long = 8_000
+    connectTimeoutMs: Long = 15_000,
+    requestTimeoutMs: Long = 20_000,
+    socketTimeoutMs: Long = 20_000
 ): HttpClient
 
 internal expect suspend fun <T> withProxyAuthentication(

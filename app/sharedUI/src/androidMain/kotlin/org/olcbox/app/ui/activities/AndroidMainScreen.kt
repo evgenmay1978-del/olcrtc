@@ -273,11 +273,9 @@ fun AndroidMainScreen(
     }
 
     LaunchedEffect(appUpdateService) {
-        val loaded = updateSettingsStore.load()
-        updateSettings = loaded
-        if (appUpdateService != null) {
-            checkUpdate(manual = false)
-        }
+        // Load settings only. The automatic update check on every launch was
+        // nagging users; updates are checked manually from settings instead.
+        updateSettings = updateSettingsStore.load()
     }
 
     fun reloadLocationsAfterImport(onComplete: () -> Unit = {}) {

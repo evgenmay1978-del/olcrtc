@@ -197,3 +197,64 @@ func TestClientsSortedByLabel(t *testing.T) {
 		t.Fatalf("Clients not sorted: %q, %q", got[0].Label, got[1].Label)
 	}
 }
+
+func TestStoreDeviceCapAndReset(t *testing.T) {
+	s, _ := OpenStore(filepath.Join(t.TempDir(), "c.json"))
+	if _, err := s.Add("u", "", StatusActive, 0); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	for _, hw := range []string{"a", "b", "c"} {
+		if err := s.AddDevice("u", hw); err != nil {
+			t.Fatalf("AddDevice %q: %v", hw, err)
+		}
+	}
+	if err := s.AddDevice("u", "a"); err != nil {
+		t.Fatalf("re-add existing device: %v", err)
+	}
+	if err := s.AddDevice("u", "d"); !errors.Is(err, ErrDeviceLimit) {
+		t.Fatalf("AddDevice 4th = %v, want ErrDeviceLimit", err)
+	}
+	if got := s.DeviceCount("u"); got != 3 {
+		t.Fatalf("DeviceCount = %d, want 3", got)
+	}
+	if err := s.ResetDevices("u"); err != nil {
+		t.Fatalf("ResetDevices: %v", err)
+	}
+	if got := s.DeviceCount("u"); got != 0 {
+		t.Fatalf("DeviceCount after reset = %d, want 0", got)
+	}
+}
+
+func TestStoreRenewStacksRemaining(t *testing.T) {
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	s, _ := OpenStore(filepath.Join(t.TempDir(), "c.json"))
+	s.now = func() time.Time { return base }
+	if _, err := s.Add("u", "", StatusActive, 10*24*time.Hour); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := s.Renew("u", 30*24*time.Hour); err != nil {
+		t.Fatalf("Renew: %v", err)
+	}
+	c, _ := s.Lookup("u")
+	if want := base.Add(40 * 24 * time.Hour); !c.Expires.Equal(want) {
+		t.Fatalf("Renew(active) expiry = %v, want %v (stacked)", c.Expires, want)
+	}
+}
+
+func TestStoreRenewExpiredStartsFromNow(t *testing.T) {
+	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	s, _ := OpenStore(filepath.Join(t.TempDir(), "c.json"))
+	s.now = func() time.Time { return start }
+	if _, err := s.Add("u", "", StatusActive, 5*24*time.Hour); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	later := start.Add(20 * 24 * time.Hour)
+	s.now = func() time.Time { return later }
+	if err := s.Renew("u", 30*24*time.Hour); err != nil {
+		t.Fatalf("Renew: %v", err)
+	}
+	c, _ := s.Lookup("u")
+	if want := later.Add(30 * 24 * time.Hour); !c.Expires.Equal(want) {
+		t.Fatalf("Renew(expired) expiry = %v, want %v (from now)", c.Expires, want)
+	}
+}

@@ -171,3 +171,23 @@ func TestGenerateTokenUnique(t *testing.T) {
 		t.Fatalf("GenerateToken() len = %d, want %d", len(a), tokenBytes*2)
 	}
 }
+
+func TestAuthorizeDeviceBinding(t *testing.T) {
+	path := writeRegistry(t, []Client{
+		{Token: "bound", Label: "b", Status: StatusActive, Devices: []string{"d1", "d2", "d3"}},
+		{Token: "free", Label: "f", Status: StatusActive},
+	})
+	r, err := New(path)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := r.Authorize("d2", map[string]any{ClaimToken: "bound"}); err != nil {
+		t.Fatalf("Authorize bound device = %v, want nil", err)
+	}
+	if _, err := r.Authorize("d4", map[string]any{ClaimToken: "bound"}); !errors.Is(err, ErrDeviceNotAuthorized) {
+		t.Fatalf("Authorize unbound device = %v, want ErrDeviceNotAuthorized", err)
+	}
+	if _, err := r.Authorize("anything", map[string]any{ClaimToken: "free"}); err != nil {
+		t.Fatalf("Authorize device-less client = %v, want nil", err)
+	}
+}

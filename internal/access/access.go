@@ -27,6 +27,17 @@ const ClaimToken = "token"
 // tokenBytes is the number of random bytes in a generated token (256-bit).
 const tokenBytes = 32
 
+// MaxDevices is the strict per-client cap on simultaneously bound devices. The
+// app registers each device's hwid (via the panel) before connecting, and the
+// server admits only bound devices, so one key can serve at most this many.
+const MaxDevices = 3
+
+// RenewContactPrefix marks a pending client as a renewal of an existing
+// subscription (vs a first-time signup). The panel writes it into Contact; the
+// approve path then extends the earned expiry instead of resetting it, and
+// pruning leaves renewals alone.
+const RenewContactPrefix = "renew "
+
 // Subscription lifecycle statuses. An empty status is treated as StatusActive
 // for backward compatibility with registries written before this field existed.
 const (
@@ -53,6 +64,11 @@ var (
 	ErrNoToken = errors.New("no access token presented")
 	// ErrEmptyToken is returned when a registry entry has an empty token.
 	ErrEmptyToken = errors.New("client token must not be empty")
+	// ErrDeviceNotAuthorized is returned when a connecting device is not one of
+	// the client's bound devices (e.g. a config copied to a 4th device).
+	ErrDeviceNotAuthorized = errors.New("device not authorized for this access")
+	// ErrDeviceLimit is returned when binding a new device would exceed MaxDevices.
+	ErrDeviceLimit = errors.New("device limit reached")
 )
 
 // Client is one subscriber's access record.
@@ -71,6 +87,11 @@ type Client struct {
 	// Contact is an optional free-form note (e.g. phone last digits the client
 	// paid from) to help the admin match a payment to this client.
 	Contact string `json:"contact,omitempty"`
+	// Devices is the set of device hwids bound to this client (max MaxDevices).
+	// The app registers a device before connecting; the server admits only these.
+	// Empty means "not yet bound" and is admitted on token alone (legacy / admin
+	// grants), so device binding is opt-in per client without breaking old ones.
+	Devices []string `json:"devices,omitempty"`
 }
 
 // isActive reports whether the client should currently be admitted. An empty
@@ -154,8 +175,6 @@ func (r *Registry) maybeReload() {
 // the client unless it is unknown, expired, or revoked. On success it returns
 // a fresh random session ID.
 func (r *Registry) Authorize(deviceID string, claims map[string]any) (string, error) {
-	_ = deviceID // identity is carried by the token, not the device ID
-
 	token, ok := claims[ClaimToken].(string)
 	if !ok || token == "" {
 		return "", ErrNoToken
@@ -180,7 +199,27 @@ func (r *Registry) Authorize(deviceID string, claims map[string]any) (string, er
 	if err := r.checkAdmissible(matched); err != nil {
 		return "", err
 	}
+	if err := authorizeDevice(matched, deviceID); err != nil {
+		return "", err
+	}
 	return newSessionID()
+}
+
+// authorizeDevice enforces the strict per-client device cap at connect time.
+// Once a client has any bound device (the app registers its hwid via the panel
+// before connecting), only those devices may connect, so a token/config copied
+// to an unregistered device is rejected. A client with no bound devices (admin
+// grant / pre-feature registry) is admitted on its token alone.
+func authorizeDevice(c *Client, deviceID string) error {
+	if len(c.Devices) == 0 {
+		return nil
+	}
+	for _, d := range c.Devices {
+		if d == deviceID {
+			return nil
+		}
+	}
+	return ErrDeviceNotAuthorized
 }
 
 // checkAdmissible returns nil if the matched client may currently be admitted,

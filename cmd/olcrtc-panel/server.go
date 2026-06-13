@@ -55,9 +55,14 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/signup", s.handleAPISignup)
 	mux.HandleFunc("/api/paid", s.handleAPIPaid)
 	mux.HandleFunc("/api/status", s.handleAPIStatus)
-	// Active clients fetch their ready-to-connect parameters here so the app
-	// can seed a working location right after approval.
+	// Active clients fetch their ready-to-connect parameters here (and bind the
+	// requesting device under the strict cap) so the app can seed a working
+	// location right after approval.
 	mux.HandleFunc("/api/config", s.handleAPIConfig)
+	// Existing clients re-purchase here (extends the same account, no garbage);
+	// and free up device slots when changing devices.
+	mux.HandleFunc("/api/renew", s.handleAPIRenew)
+	mux.HandleFunc("/api/reset-devices", s.handleAPIResetDevices)
 	return mux
 }
 

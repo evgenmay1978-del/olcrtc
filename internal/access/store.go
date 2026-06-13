@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -139,19 +140,101 @@ func (s *Store) SetDisabled(label string, disabled bool) error {
 	return nil
 }
 
+// AddDevice binds hwid to the client, enforcing MaxDevices. Re-adding an
+// already-bound device is a no-op success. Returns ErrDeviceLimit when the cap
+// is reached and hwid is new.
+func (s *Store) AddDevice(label, hwid string) error {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return fmt.Errorf("%w: %q", ErrClientNotFound, label)
+	}
+	for _, d := range s.clients[i].Devices {
+		if d == hwid {
+			return nil
+		}
+	}
+	if len(s.clients[i].Devices) >= MaxDevices {
+		return ErrDeviceLimit
+	}
+	s.clients[i].Devices = append(s.clients[i].Devices, hwid)
+	return nil
+}
+
+// ResetDevices clears the client's bound devices so the next ones to connect
+// re-bind (used when the user changes phones or hits the device cap).
+func (s *Store) ResetDevices(label string) error {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return fmt.Errorf("%w: %q", ErrClientNotFound, label)
+	}
+	s.clients[i].Devices = nil
+	return nil
+}
+
+// DeviceCount returns how many devices are currently bound to the label.
+func (s *Store) DeviceCount(label string) int {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return 0
+	}
+	return len(s.clients[i].Devices)
+}
+
+// Renew activates the client and extends its expiry by ttl, stacking onto any
+// remaining time so renewing early does not waste days. Token and bound devices
+// are preserved. ttl == 0 means no expiry.
+func (s *Store) Renew(label string, ttl time.Duration) error {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return fmt.Errorf("%w: %q", ErrClientNotFound, label)
+	}
+	s.clients[i].Status = StatusActive
+	if ttl <= 0 {
+		s.clients[i].Expires = time.Time{}
+		return nil
+	}
+	base := s.now()
+	if cur := s.clients[i].Expires; !cur.IsZero() && cur.After(base) {
+		base = cur
+	}
+	s.clients[i].Expires = base.Add(ttl).UTC()
+	return nil
+}
+
+// MarkPending flags an existing client as pending and records the contact note
+// (e.g. the renewal tariff), preserving token, earned expiry, and bound devices.
+// Used by the renew flow so a repeat purchase reuses the same client instead of
+// creating a duplicate "garbage" entry.
+func (s *Store) MarkPending(label, contact string) error {
+	i := s.findByLabel(label)
+	if i < 0 {
+		return fmt.Errorf("%w: %q", ErrClientNotFound, label)
+	}
+	s.clients[i].Status = StatusPending
+	s.clients[i].Contact = contact
+	return nil
+}
+
 // PruneExpiredPending auto-rejects pending clients whose payment deadline
 // (Expires) has passed, so stale unpaid signups don't linger as pending
 // forever. It returns the labels that were rejected. A pending client with no
-// Expires is left untouched (no deadline set).
+// Expires is left untouched (no deadline set). Renewals are skipped: their
+// Expires is the earned subscription end (which may already be past), not a
+// payment deadline, so they keep waiting for the operator instead of being
+// auto-rejected.
 func (s *Store) PruneExpiredPending() []string {
 	now := s.now()
 	var rejected []string
 	for i := range s.clients {
 		c := &s.clients[i]
-		if c.Status == StatusPending && !c.Expires.IsZero() && now.After(c.Expires) {
-			c.Status = StatusRejected
-			rejected = append(rejected, c.Label)
+		if c.Status != StatusPending || c.Expires.IsZero() || !now.After(c.Expires) {
+			continue
 		}
+		if strings.HasPrefix(strings.TrimSpace(c.Contact), RenewContactPrefix) {
+			continue
+		}
+		c.Status = StatusRejected
+		rejected = append(rejected, c.Label)
 	}
 	return rejected
 }

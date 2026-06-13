@@ -181,7 +181,7 @@ jobs:
         # to the default branch to stay within the artifact storage quota.
         if: github.event_name == 'push'
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: olcrtc-cli-binaries
           path: build/
@@ -219,7 +219,7 @@ jobs:
 
       - name: Upload Android Artifact
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: olcrtc-android
           path: build/olcrtc.aar

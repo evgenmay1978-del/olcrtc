@@ -55,6 +55,9 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/signup", s.handleAPISignup)
 	mux.HandleFunc("/api/paid", s.handleAPIPaid)
 	mux.HandleFunc("/api/status", s.handleAPIStatus)
+	// Active clients fetch their ready-to-connect parameters here so the app
+	// can seed a working location right after approval.
+	mux.HandleFunc("/api/config", s.handleAPIConfig)
 	return mux
 }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ru.maestrovpn.app.data.payment.ConnectionConfig
 import ru.maestrovpn.app.data.payment.PaymentApi
 import ru.maestrovpn.app.data.payment.SignupResponse
 import ru.maestrovpn.app.data.payment.StatusResponse
@@ -44,6 +45,7 @@ data class PaymentState(
     val instructions: String = "",
     val token: String = "",
     val expires: String = "",
+    val connectionConfig: ConnectionConfig? = null,
     val loading: Boolean = false,
     val error: String? = null
 )
@@ -129,26 +131,40 @@ class PaymentViewModel(
         viewModelScope.launch {
             repeat(POLL_ATTEMPTS) {
                 val resp = runCatching { withContext(ioDispatcher) { api.status(login) } }.getOrNull()
-                if (resp != null && applyStatus(resp)) return@launch
+                if (resp != null) {
+                    when (resp.status) {
+                        StatusResponse.STATUS_ACTIVE -> {
+                            activate(login, resp)
+                            return@launch
+                        }
+                        StatusResponse.STATUS_REJECTED -> {
+                            _state.update { it.copy(step = PaymentStep.Rejected) }
+                            return@launch
+                        }
+                    }
+                }
                 delay(POLL_INTERVAL_MS)
             }
         }
     }
 
-    /** Returns true when a terminal status (active/rejected) was reached. */
-    private fun applyStatus(resp: StatusResponse): Boolean {
-        return when (resp.status) {
-            StatusResponse.STATUS_ACTIVE -> {
-                _state.update {
-                    it.copy(step = PaymentStep.Active, token = resp.token, expires = resp.expires)
-                }
-                true
-            }
-            StatusResponse.STATUS_REJECTED -> {
-                _state.update { it.copy(step = PaymentStep.Rejected) }
-                true
-            }
-            else -> false
+    /**
+     * Marks access active and fetches the ready-to-connect parameters so the app
+     * can seed a working location. The config fetch is best-effort: if it fails
+     * (older panel without /api/config), the flow still completes with the token
+     * and the app falls back to attaching the token to existing locations.
+     */
+    private suspend fun activate(login: String, resp: StatusResponse) {
+        val config = runCatching { withContext(ioDispatcher) { api.config(login) } }
+            .getOrNull()
+            ?.takeIf { it.isConnectable() }
+        _state.update {
+            it.copy(
+                step = PaymentStep.Active,
+                token = resp.token,
+                expires = resp.expires,
+                connectionConfig = config
+            )
         }
     }
 

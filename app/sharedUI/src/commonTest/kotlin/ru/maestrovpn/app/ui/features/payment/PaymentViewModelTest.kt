@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import ru.maestrovpn.app.data.payment.ConnectionConfig
 import ru.maestrovpn.app.data.payment.PaymentApi
 import ru.maestrovpn.app.data.payment.SignupResponse
 import ru.maestrovpn.app.data.payment.StatusResponse
@@ -17,7 +18,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private class FakePaymentApi(
-    private val statusValue: StatusResponse = StatusResponse(status = StatusResponse.STATUS_ACTIVE, token = "tok")
+    private val statusValue: StatusResponse = StatusResponse(status = StatusResponse.STATUS_ACTIVE, token = "tok"),
+    private val configValue: ConnectionConfig = ConnectionConfig()
 ) : PaymentApi {
     var paidCalled = false
     override suspend fun tariffs(): List<Tariff> =
@@ -28,6 +30,7 @@ private class FakePaymentApi(
 
     override suspend fun markPaid(login: String) { paidCalled = true }
     override suspend fun status(login: String) = statusValue
+    override suspend fun config(login: String) = configValue
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

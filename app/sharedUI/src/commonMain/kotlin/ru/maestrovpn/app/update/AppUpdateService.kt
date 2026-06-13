@@ -32,7 +32,7 @@ data class ReleaseMirror(
     companion object {
         val GitHub = ReleaseMirror(
             name = "GitHub",
-            repositoryUrl = "https://github.com/alananisimov/maestrovpn"
+            repositoryUrl = "https://github.com/evgenmay1978-del/olcrtc"
         )
     }
 }
@@ -110,7 +110,19 @@ class AppUpdateService(
     }
 
     private suspend fun fetchRelease(client: HttpClient, channel: ReleaseChannel): GithubRelease {
-        val endpoint = when (channel) {
+        // Our CI publishes per-platform rolling releases as *prereleases*
+        // ("android-latest", "windows-latest"). GitHub's /releases/latest skips
+        // prereleases, and we ship no "nightly" tag, so for the platforms we do
+        // build, both channels resolve to that single rolling tag. Only other
+        // platforms fall back to the channel-specific endpoints.
+        val rollingTag = when (platform.os) {
+            "android" -> "android-latest"
+            "windows" -> "windows-latest"
+            else -> null
+        }
+        val endpoint = if (rollingTag != null) {
+            "https://api.github.com/repos/${mirror.ownerRepo}/releases/tags/$rollingTag"
+        } else when (channel) {
             ReleaseChannel.Stable -> "https://api.github.com/repos/${mirror.ownerRepo}/releases/latest"
             ReleaseChannel.Nightly -> "https://api.github.com/repos/${mirror.ownerRepo}/releases/tags/nightly"
         }
@@ -217,10 +229,10 @@ class AppUpdateService(
             releaseTag: String,
             asset: AppUpdateAsset
         ): String {
-            return when (channel) {
-                ReleaseChannel.Stable -> releaseTag.removePrefix("v")
-                ReleaseChannel.Nightly -> asset.name.versionToken() ?: releaseTag.removePrefix("v")
-            }
+            // The rolling release tags ("android-latest") carry no version, so the
+            // real version lives in the asset name (e.g. maestrovpn-android-1.2.3.apk).
+            // Prefer that token for both channels, falling back to the tag.
+            return asset.name.versionToken() ?: releaseTag.removePrefix("v")
         }
 
         private fun String.versionToken(): String? {

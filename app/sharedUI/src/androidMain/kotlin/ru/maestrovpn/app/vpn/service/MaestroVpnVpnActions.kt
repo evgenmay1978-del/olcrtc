@@ -12,4 +12,11 @@ object MaestroVpnVpnActions {
     const val EXTRA_SPLIT_TUNNEL_MODE = "ru.maestrovpn.app.vpn.service.MaestroVpnVpnService.SPLIT_TUNNEL_MODE"
     const val EXTRA_SPLIT_TUNNEL_PROXY_APPS = "ru.maestrovpn.app.vpn.service.MaestroVpnVpnService.SPLIT_TUNNEL_PROXY_APPS"
     const val EXTRA_SPLIT_TUNNEL_BYPASS_APPS = "ru.maestrovpn.app.vpn.service.MaestroVpnVpnService.SPLIT_TUNNEL_BYPASS_APPS"
+
+    // Autostart-on-boot: startVpn mirrors the last start's settings here so
+    // BootReceiver can replay an identical start after a reboot. KEY_WAS_CONNECTED
+    // gates it so we only reconnect when the VPN was actually running at shutdown.
+    const val AUTOSTART_PREFS = "maestrovpn_autostart"
+    const val KEY_AUTOSTART_ENABLED = "autostart_enabled"
+    const val KEY_WAS_CONNECTED = "was_connected"
 }

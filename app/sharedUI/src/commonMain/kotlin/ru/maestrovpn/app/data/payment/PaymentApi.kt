@@ -29,6 +29,7 @@ interface PaymentApi {
     suspend fun signup(login: String, tariffId: String): SignupResponse
     suspend fun markPaid(login: String)
     suspend fun status(login: String): StatusResponse
+    suspend fun config(login: String): ConnectionConfig
 }
 
 /**
@@ -66,6 +67,12 @@ class HttpPaymentApi(
     override suspend fun status(login: String): StatusResponse {
         val text = getText("/api/status?login=" + login.encodeURLParameter())
         return json.decodeFromString(StatusResponse.serializer(), text)
+    }
+
+    /** Fetches ready-to-connect parameters for an active client. */
+    override suspend fun config(login: String): ConnectionConfig {
+        val text = getText("/api/config?login=" + login.encodeURLParameter())
+        return json.decodeFromString(ConnectionConfig.serializer(), text)
     }
 
     private suspend fun getText(path: String): String {

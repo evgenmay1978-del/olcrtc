@@ -1,5 +1,6 @@
 package ru.maestrovpn.app.data.payment
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** A purchasable subscription tariff, as returned by the server's /api/tariffs. */
@@ -40,4 +41,29 @@ data class StatusResponse(
         const val STATUS_DISABLED = "disabled"
         const val STATUS_NOT_FOUND = "not_found"
     }
+}
+
+/**
+ * Response of GET /api/config: the ready-to-connect parameters the app needs to
+ * seed a working location for an active client. Room/key/provider/transport are
+ * server-wide; the token is this client's own access token.
+ */
+@Serializable
+data class ConnectionConfig(
+    val name: String = "",
+    val provider: String = "",
+    @SerialName("room_id")
+    val roomId: String = "",
+    val channel: String = "",
+    val key: String = "",
+    val transport: String = "",
+    @SerialName("engine_name")
+    val engineName: String = "",
+    @SerialName("engine_url")
+    val engineUrl: String = "",
+    val token: String = "",
+    val expires: String = ""
+) {
+    /** True when the bundle carries enough to actually connect. */
+    fun isConnectable(): Boolean = roomId.isNotBlank() && key.isNotBlank()
 }

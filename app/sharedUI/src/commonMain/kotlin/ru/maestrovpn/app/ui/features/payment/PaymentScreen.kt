@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.maestrovpn.app.data.payment.ConnectionConfig
 import ru.maestrovpn.app.data.payment.Tariff
 
 /**
@@ -61,7 +62,7 @@ fun PaymentScreen(
     panelUrl: String,
     onPanelUrlChange: (String) -> Unit,
     onBack: () -> Unit,
-    onActivated: (token: String) -> Unit = {}
+    onActivated: (token: String, config: ConnectionConfig?) -> Unit = { _, _ -> }
 ) {
     if (viewModel == null) {
         PanelUrlPrompt(panelUrl = panelUrl, onPanelUrlChange = onPanelUrlChange, onBack = onBack)
@@ -73,7 +74,7 @@ fun PaymentScreen(
     LaunchedEffect(Unit) { viewModel.loadTariffs() }
     LaunchedEffect(state.step, state.token) {
         if (state.step == PaymentStep.Active && state.token.isNotEmpty()) {
-            onActivated(state.token)
+            onActivated(state.token, state.connectionConfig)
         }
     }
 

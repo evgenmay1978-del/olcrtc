@@ -47,7 +47,10 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     private val _connectionMode = MutableStateFlow(AndroidConnectionMode.Tun)
     private val _proxySettings = MutableStateFlow(AndroidSocksProxySettings())
     private val _splitTunnelSettings = MutableStateFlow(AndroidSplitTunnelSettings())
-    private val _dynamicThemeEnabled = MutableStateFlow(true)
+    // Off by default so the MaestroVPN gold/dark brand theme is what users see.
+    // When on (Android 12+), Material You would derive colors from the wallpaper
+    // and discard the brand scheme entirely.
+    private val _dynamicThemeEnabled = MutableStateFlow(false)
     private val _installedApps = MutableStateFlow<List<AndroidInstalledApp>>(emptyList())
     private val deviceIdentityProvider = PersistentDeviceIdentityProvider(
         LocationsDataSourceImpl(appContext)
@@ -89,7 +92,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
                         mode = mode,
                         proxy = proxy,
                         splitTunnel = splitTunnel,
-                        dynamicThemeEnabled = preferences[KEY_ANDROID_DYNAMIC_THEME] != false
+                        dynamicThemeEnabled = preferences[KEY_ANDROID_DYNAMIC_THEME] == true
                     )
                 }
                 .collect { settings ->
@@ -232,6 +235,7 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
                 ArrayList(_splitTunnelSettings.value.bypassPackages)
             )
         }
+        persistAutostartState(connected = true)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ContextCompat.startForegroundService(context, intent)
         } else {
@@ -240,11 +244,38 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     }
 
     override fun stopVpn() {
+        // A user-initiated stop means "stay off after reboot" too.
+        persistAutostartState(connected = false)
         val intent = Intent().apply {
             setClassName(context.packageName, MaestroVpnVpnActions.SERVICE_CLASS_NAME)
             action = MaestroVpnVpnActions.ACTION_STOP_VPN
         }
         context.startService(intent)
+    }
+
+    // Mirror the current runtime settings (and whether the VPN should come back
+    // on boot) into plain SharedPreferences so BootReceiver can replay the exact
+    // same start intent without touching DataStore from a broadcast receiver.
+    private fun persistAutostartState(connected: Boolean) {
+        appContext
+            .getSharedPreferences(MaestroVpnVpnActions.AUTOSTART_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(MaestroVpnVpnActions.KEY_WAS_CONNECTED, connected)
+            .putString(MaestroVpnVpnActions.EXTRA_CONNECTION_MODE, _connectionMode.value.value)
+            .putString(MaestroVpnVpnActions.EXTRA_SOCKS_HOST, _proxySettings.value.host)
+            .putInt(MaestroVpnVpnActions.EXTRA_SOCKS_PORT, _proxySettings.value.port)
+            .putString(MaestroVpnVpnActions.EXTRA_SOCKS_USERNAME, _proxySettings.value.username)
+            .putString(MaestroVpnVpnActions.EXTRA_SOCKS_PASSWORD, _proxySettings.value.password)
+            .putString(MaestroVpnVpnActions.EXTRA_SPLIT_TUNNEL_MODE, _splitTunnelSettings.value.mode.value)
+            .putStringSet(
+                MaestroVpnVpnActions.EXTRA_SPLIT_TUNNEL_PROXY_APPS,
+                _splitTunnelSettings.value.proxyPackages
+            )
+            .putStringSet(
+                MaestroVpnVpnActions.EXTRA_SPLIT_TUNNEL_BYPASS_APPS,
+                _splitTunnelSettings.value.bypassPackages
+            )
+            .apply()
     }
 
     override suspend fun ping(locationConfig: LocationConfig): Long? {

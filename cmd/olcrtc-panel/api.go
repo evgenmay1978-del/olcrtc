@@ -9,6 +9,7 @@ import (
 
 	"github.com/openlibrecommunity/olcrtc/internal/access"
 	"github.com/openlibrecommunity/olcrtc/internal/billing"
+	"github.com/openlibrecommunity/olcrtc/internal/config"
 	"github.com/openlibrecommunity/olcrtc/internal/notify"
 )
 
@@ -282,4 +283,65 @@ func (s *server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 		resp["token"] = v.token
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// connectionConfig is the ready-to-connect bundle the app needs to seed a
+// working location: the server-wide room/key/provider/transport plus the
+// client's own access token. It mirrors the fields config.GenerateClientConfig
+// copies from the server config, so the app end always matches the server end.
+type connectionConfig struct {
+	Name       string `json:"name"`
+	Provider   string `json:"provider"`
+	RoomID     string `json:"room_id"`
+	Channel    string `json:"channel,omitempty"`
+	Key        string `json:"key"`
+	Transport  string `json:"transport"`
+	EngineName string `json:"engine_name,omitempty"`
+	EngineURL  string `json:"engine_url,omitempty"`
+	Token      string `json:"token"`
+	Expires    string `json:"expires,omitempty"`
+}
+
+// handleAPIConfig hands an ACTIVE client the connection parameters it needs to
+// connect, so the app can seed a ready-to-use location right after the operator
+// approves a payment. Pending/rejected/disabled clients get 403 with no config,
+// so the connection details are never exposed before access is granted.
+func (s *server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
+	if s.serverConfig == "" {
+		apiError(w, http.StatusServiceUnavailable,
+			"config generation is not enabled on this panel")
+		return
+	}
+	login := strings.TrimSpace(r.URL.Query().Get("login"))
+	if login == "" {
+		apiError(w, http.StatusBadRequest, "login query param required")
+		return
+	}
+	v := s.lookupView(login)
+	if !v.found {
+		apiError(w, http.StatusNotFound, "login not found")
+		return
+	}
+	if v.status != access.StatusActive {
+		apiError(w, http.StatusForbidden, "access is not active")
+		return
+	}
+
+	serverCfg, err := config.Load(s.serverConfig)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "load server config")
+		return
+	}
+	writeJSON(w, http.StatusOK, connectionConfig{
+		Name:       "MaestroVPN",
+		Provider:   serverCfg.Auth.Provider,
+		RoomID:     serverCfg.Room.ID,
+		Channel:    serverCfg.Room.Channel,
+		Key:        serverCfg.Crypto.Key,
+		Transport:  serverCfg.Net.Transport,
+		EngineName: serverCfg.Engine.Name,
+		EngineURL:  serverCfg.Engine.URL,
+		Token:      v.token,
+		Expires:    v.expiry,
+	})
 }

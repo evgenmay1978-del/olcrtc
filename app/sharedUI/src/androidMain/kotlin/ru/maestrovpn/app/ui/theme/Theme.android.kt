@@ -18,8 +18,12 @@ actual fun AppTheme(
     useDynamicColor: Boolean,
     content: @Composable () -> Unit
 ) {
+    // MaestroVPN ships a single brutal gold-on-dark identity; force the dark
+    // brand scheme regardless of the phone's light/dark setting so the look is
+    // consistent (and never falls back to the muted light palette).
+    @Suppress("UNUSED_VARIABLE")
     val systemIsDark = isSystemInDarkTheme()
-    val isDarkState = remember { mutableStateOf(systemIsDark) }
+    val isDarkState = remember { mutableStateOf(true) }
     val typography = getAppTypography()
 
     CompositionLocalProvider(

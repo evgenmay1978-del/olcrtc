@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import ru.maestrovpn.app.data.model.LocationConfig
+import ru.maestrovpn.app.data.payment.ConnectionConfig
 import ru.maestrovpn.app.ui.features.home.HomeScreen
 import ru.maestrovpn.app.ui.features.home.HomeScreenViewModel
 import ru.maestrovpn.app.ui.features.locations.LocationSettingsScreen
@@ -40,7 +41,7 @@ fun MaestroVpnAppContent(
     paymentViewModel: PaymentViewModel? = null,
     panelUrl: String = "",
     onPanelUrlChange: (String) -> Unit = {},
-    onSubscriptionActivated: (token: String) -> Unit = {}
+    onSubscriptionActivated: (token: String, config: ConnectionConfig?) -> Unit = { _, _ -> }
 ) {
     val homeScrollState = rememberScrollState()
 
@@ -98,7 +99,8 @@ fun MaestroVpnAppContent(
                     onAddLocation = {
                         locationViewModel.startEditing(null)
                         onNavigate(AppScreen.LocationSettings(null))
-                    }
+                    },
+                    onBuySubscription = { onNavigate(AppScreen.Subscription) }
                 )
             }
 

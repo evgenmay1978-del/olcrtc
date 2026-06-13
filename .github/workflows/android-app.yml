@@ -86,8 +86,8 @@ jobs:
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
           export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
           ./gradlew \
-            -Pmaestrovpn.version="0.0.0-ci" \
-            -Pmaestrovpn.versionCode="1" \
+            -Pmaestrovpn.version="1.0.${{ github.run_number }}" \
+            -Pmaestrovpn.versionCode="${{ github.run_number }}" \
             -Pmaestrovpn.android.abiFilters=armeabi-v7a \
             :sharedUI:jvmTest :androidApp:assembleDebug --stacktrace
 
@@ -100,14 +100,16 @@ jobs:
             echo "debug APK not found" >&2
             exit 1
           fi
-          cp "$apk" "dist/maestrovpn-debug.apk"
+          # The version lives in the asset name so the in-app updater can detect
+          # newer builds ("android" token also lets it pick this universal APK).
+          cp "$apk" "dist/maestrovpn-android-1.0.${{ github.run_number }}.apk"
 
       - name: Upload APK artifact
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: maestrovpn-debug-apk
-          path: app/dist/maestrovpn-debug.apk
+          name: maestrovpn-android-apk
+          path: app/dist/maestrovpn-android-1.0.${{ github.run_number }}.apk
           retention-days: 7
 
       # Publish the APK as a Release asset on pushes to the default branch.
@@ -121,7 +123,7 @@ jobs:
           tag_name: android-latest
           name: Latest debug APK
           body: |
-            Unsigned debug APK built from ${{ github.sha }}.
+            MaestroVPN 1.0.${{ github.run_number }} — unsigned debug APK built from ${{ github.sha }}.
             Install on a phone or Android TV (enable "unknown sources").
           prerelease: true
-          files: app/dist/maestrovpn-debug.apk
+          files: app/dist/maestrovpn-android-1.0.${{ github.run_number }}.apk

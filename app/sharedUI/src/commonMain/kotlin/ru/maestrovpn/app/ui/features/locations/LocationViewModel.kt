@@ -183,6 +183,41 @@ class LocationViewModel(
         }
     }
 
+    /**
+     * Seeds (or refreshes) the operator's managed server as a ready-to-connect
+     * location and makes it active, so a freshly activated subscriber can connect
+     * immediately without entering any server details. A stable storage id keeps
+     * re-activation from creating duplicates. Falls back to [applyAccessToken]
+     * when the server did not hand back usable room/key parameters.
+     */
+    fun applyManagedServer(
+        name: String,
+        id: String,
+        key: String,
+        provider: String,
+        transport: String,
+        token: String,
+        onComplete: () -> Unit = {}
+    ) {
+        if (id.isBlank() || key.isBlank()) {
+            applyAccessToken(token, onComplete)
+            return
+        }
+        viewModelScope.launch {
+            val config = LocationConfig(
+                name = name.ifBlank { MANAGED_SERVER_NAME },
+                id = id.trim(),
+                key = key.trim(),
+                bypassProvider = provider,
+                transport = transport,
+                token = token.trim()
+            ).normalized()
+            locationsRepository.saveLocation(MANAGED_SERVER_ID, config)
+            locationsRepository.setActiveLocationId(MANAGED_SERVER_ID)
+            loadLocations(onComplete)
+        }
+    }
+
     fun selectLocation(id: String, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             locationsRepository.setActiveLocationId(id)
@@ -519,6 +554,8 @@ class LocationViewModel(
     }
 
     private companion object {
+        const val MANAGED_SERVER_ID = "maestrovpn_primary"
+        const val MANAGED_SERVER_NAME = "MaestroVPN"
         const val LOCATION_PING_ATTEMPTS = 1
         const val LOCATION_PING_TIMEOUT_MS = 12_000L
         const val LOCATION_PING_RETRY_DELAY_MS = 0L

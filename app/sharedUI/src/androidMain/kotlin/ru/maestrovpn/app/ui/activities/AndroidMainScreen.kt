@@ -273,9 +273,12 @@ fun AndroidMainScreen(
     }
 
     LaunchedEffect(appUpdateService) {
-        // Load settings only. The automatic update check on every launch was
-        // nagging users; updates are checked manually from settings instead.
         updateSettings = updateSettingsStore.load()
+        // Updates now come from our own repo with matching version numbers, so a
+        // launch check only surfaces a genuinely newer build. It is gated by the
+        // configured interval and deduped by last-seen version, so it no longer
+        // nags on every launch the way the old upstream-pointed check did.
+        checkUpdate(manual = false)
     }
 
     fun reloadLocationsAfterImport(onComplete: () -> Unit = {}) {
@@ -416,11 +419,27 @@ fun AndroidMainScreen(
             panelBaseUrl = url
             paymentPrefs.edit().putString("panel_url", url).apply()
         },
-        onSubscriptionActivated = { token ->
-            locationViewModel.applyAccessToken(token) {
-                viewModel.loadCurrentConfig()
+        onSubscriptionActivated = { token, config ->
+            if (config != null && config.isConnectable()) {
+                // Seed the operator's server as a ready location so the subscriber
+                // can connect right away with nothing to enter by hand.
+                locationViewModel.applyManagedServer(
+                    name = config.name,
+                    id = config.roomId,
+                    key = config.key,
+                    provider = config.provider,
+                    transport = config.transport,
+                    token = config.token.ifBlank { token }
+                ) {
+                    viewModel.loadCurrentConfig()
+                }
+                Toast.makeText(context, "Подписка активна — сервер добавлен, можно подключаться", Toast.LENGTH_LONG).show()
+            } else {
+                locationViewModel.applyAccessToken(token) {
+                    viewModel.loadCurrentConfig()
+                }
+                Toast.makeText(context, "Доступ активен — токен подключён", Toast.LENGTH_LONG).show()
             }
-            Toast.makeText(context, "Доступ активен — токен подключён", Toast.LENGTH_LONG).show()
         }
     )
 

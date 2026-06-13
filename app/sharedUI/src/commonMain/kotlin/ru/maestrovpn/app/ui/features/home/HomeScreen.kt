@@ -4,13 +4,22 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.WorkspacePremium
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,7 +29,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import ru.maestrovpn.app.ui.components.StartButton
 import ru.maestrovpn.app.ui.features.home.components.AddConfigurationSheet
@@ -48,7 +59,8 @@ fun HomeScreen(
     showSplitTunnelingButton: Boolean = false,
     onSplitTunnelingClick: () -> Unit = {},
     onOpenLocationSettings: (String?) -> Unit,
-    onAddLocation: () -> Unit
+    onAddLocation: () -> Unit,
+    onBuySubscription: () -> Unit = {}
 ) {
     var isLogsSheetOpen by remember { mutableStateOf(false) }
     var isAddSheetOpen by remember { mutableStateOf(false) }
@@ -165,6 +177,30 @@ fun HomeScreen(
                     onAddLocation()
                 }
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Direct path to buying access — straight to the tariff picker, no
+            // digging through settings menus.
+            Button(
+                onClick = onBuySubscription,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(Icons.Rounded.WorkspacePremium, contentDescription = null)
+                Text(
+                    text = "  КУПИТЬ ПОДПИСКУ",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    letterSpacing = 1.sp
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

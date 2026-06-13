@@ -88,7 +88,12 @@ fun AndroidMainScreen(
         mutableStateOf(paymentPrefs.getString("panel_url", "https://wapmixx.ru:9443").orEmpty())
     }
     val paymentViewModel = remember(panelBaseUrl) {
-        createPaymentApi(panelBaseUrl)?.let { PaymentViewModel(it) }
+        createPaymentApi(panelBaseUrl) { vpnManager.deviceHwid() }?.let { PaymentViewModel(it) }
+    }
+    // Load the login persisted on this device so the screen offers renewal /
+    // device management instead of a fresh purchase.
+    LaunchedEffect(paymentViewModel) {
+        paymentViewModel?.setKnownLogin(paymentPrefs.getString("login", null))
     }
     // Load the cached Russian-app list immediately and refresh it from the repo
     // in the background, so the "bypass Russian apps" preset stays up to date.
@@ -420,6 +425,11 @@ fun AndroidMainScreen(
             paymentPrefs.edit().putString("panel_url", url).apply()
         },
         onSubscriptionActivated = { token, config ->
+            // Remember the login on this device so future visits offer renewal
+            // and device management (and so a repeat purchase reuses the account).
+            paymentViewModel?.state?.value?.login?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { paymentPrefs.edit().putString("login", it).apply() }
             if (config != null && config.isConnectable()) {
                 // Seed the operator's server as a ready location so the subscriber
                 // can connect right away with nothing to enter by hand.

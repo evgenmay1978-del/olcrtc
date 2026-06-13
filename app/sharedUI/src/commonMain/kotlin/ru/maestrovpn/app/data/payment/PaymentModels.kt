@@ -32,7 +32,10 @@ data class SignupResponse(
 data class StatusResponse(
     val status: String = "",
     val expires: String = "",
-    val token: String = ""
+    val token: String = "",
+    val devices: Int = 0,
+    @SerialName("device_limit")
+    val deviceLimit: Int = 3
 ) {
     companion object {
         const val STATUS_PENDING = "pending"

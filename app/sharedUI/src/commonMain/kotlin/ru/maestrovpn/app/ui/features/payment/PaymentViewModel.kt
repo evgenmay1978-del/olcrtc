@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ru.maestrovpn.app.data.payment.ConnectionConfig
+import ru.maestrovpn.app.data.payment.DeviceLimitException
 import ru.maestrovpn.app.data.payment.PaymentApi
 import ru.maestrovpn.app.data.payment.SignupResponse
 import ru.maestrovpn.app.data.payment.StatusResponse
@@ -46,6 +47,12 @@ data class PaymentState(
     val token: String = "",
     val expires: String = "",
     val connectionConfig: ConnectionConfig? = null,
+    val devices: Int = 0,
+    val deviceLimit: Int = 3,
+    /** Login persisted on this device, if any: drives renew-vs-buy. */
+    val knownLogin: String? = null,
+    val deviceLimitReached: Boolean = false,
+    val info: String? = null,
     val loading: Boolean = false,
     val error: String? = null
 )
@@ -67,10 +74,17 @@ class PaymentViewModel(
         _state.update { it.copy(login = value, error = null) }
     }
 
-    /** Returns to tariff selection, keeping the entered login. */
+    /** Returns to tariff selection, keeping the login and known account. */
     fun reset() {
         _state.update {
-            PaymentState(login = it.login, tariffs = it.tariffs)
+            PaymentState(
+                login = it.login,
+                tariffs = it.tariffs,
+                knownLogin = it.knownLogin,
+                devices = it.devices,
+                deviceLimit = it.deviceLimit,
+                expires = it.expires
+            )
         }
     }
 
@@ -163,8 +177,133 @@ class PaymentViewModel(
                 step = PaymentStep.Active,
                 token = resp.token,
                 expires = resp.expires,
-                connectionConfig = config
+                connectionConfig = config,
+                devices = resp.devices,
+                deviceLimit = if (resp.deviceLimit > 0) resp.deviceLimit else it.deviceLimit,
+                knownLogin = login
             )
+        }
+    }
+
+    /**
+     * Injects the login persisted on this device (set after a first purchase or
+     * a transfer). When present, the screen offers "renew" instead of a fresh
+     * "buy", and the account status (devices, expiry) is refreshed.
+     */
+    fun setKnownLogin(login: String?) {
+        val value = login?.trim().orEmpty()
+        _state.update {
+            it.copy(
+                knownLogin = value.takeIf { s -> s.isNotEmpty() },
+                login = if (it.login.isBlank()) value else it.login
+            )
+        }
+        if (value.isNotEmpty()) refreshAccount()
+    }
+
+    /** Refreshes the existing account's status (devices, expiry). */
+    fun refreshAccount() {
+        val login = (_state.value.knownLogin ?: _state.value.login).trim()
+        if (login.isEmpty()) return
+        viewModelScope.launch {
+            val resp = runCatching { withContext(ioDispatcher) { api.status(login) } }.getOrNull()
+                ?: return@launch
+            _state.update {
+                it.copy(
+                    devices = resp.devices,
+                    deviceLimit = if (resp.deviceLimit > 0) resp.deviceLimit else it.deviceLimit,
+                    expires = resp.expires.ifEmpty { it.expires }
+                )
+            }
+        }
+    }
+
+    /** Primary action: renews the existing account, or signs up a new one. */
+    fun purchase(tariff: Tariff) {
+        if (!_state.value.knownLogin.isNullOrBlank()) {
+            renew(tariff)
+        } else {
+            signup(tariff)
+        }
+    }
+
+    /** Renews the existing account for the chosen tariff, then waits for payment. */
+    fun renew(tariff: Tariff) {
+        val login = (_state.value.knownLogin ?: _state.value.login).trim()
+        if (login.isEmpty()) {
+            _state.update { it.copy(error = "Введите логин") }
+            return
+        }
+        _state.update { it.copy(loading = true, error = null, selectedTariff = tariff, login = login) }
+        viewModelScope.launch {
+            runCatching { withContext(ioDispatcher) { api.renew(login, tariff.id) } }
+                .onSuccess { resp -> applySignup(resp) }
+                .onFailure { e -> _state.update { it.copy(loading = false, error = e.message ?: "renew failed") } }
+        }
+    }
+
+    /**
+     * Activates THIS device for an existing account by login (the "transfer to
+     * another device" path): fetches the connection config, which binds the
+     * device under the cap. On success the screen seeds a working location; at
+     * the cap it surfaces deviceLimitReached so the user can reset devices.
+     */
+    fun activateByLogin(login: String) {
+        val value = login.trim()
+        if (value.isEmpty()) {
+            _state.update { it.copy(error = "Введите логин") }
+            return
+        }
+        _state.update { it.copy(loading = true, error = null, deviceLimitReached = false, login = value) }
+        viewModelScope.launch {
+            runCatching { withContext(ioDispatcher) { api.config(value) } }
+                .onSuccess { config ->
+                    if (!config.isConnectable()) {
+                        _state.update { it.copy(loading = false, error = "Сервер не вернул параметры подключения") }
+                        return@onSuccess
+                    }
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            step = PaymentStep.Active,
+                            token = config.token,
+                            expires = config.expires.ifEmpty { it.expires },
+                            connectionConfig = config,
+                            knownLogin = value
+                        )
+                    }
+                    refreshAccount()
+                }
+                .onFailure { e ->
+                    if (e is DeviceLimitException) {
+                        _state.update {
+                            it.copy(
+                                loading = false,
+                                deviceLimitReached = true,
+                                deviceLimit = e.limit,
+                                error = "Достигнут лимит устройств (${e.limit}). Сбросьте устройства."
+                            )
+                        }
+                    } else {
+                        _state.update { it.copy(loading = false, error = e.message ?: "activation failed") }
+                    }
+                }
+        }
+    }
+
+    /** Clears the account's bound devices so new ones can be added. */
+    fun resetDevices() {
+        val login = (_state.value.knownLogin ?: _state.value.login).trim()
+        if (login.isEmpty()) return
+        _state.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            runCatching { withContext(ioDispatcher) { api.resetDevices(login) } }
+                .onSuccess {
+                    _state.update {
+                        it.copy(loading = false, devices = 0, deviceLimitReached = false, info = "Устройства сброшены")
+                    }
+                }
+                .onFailure { e -> _state.update { it.copy(loading = false, error = e.message ?: "reset failed") } }
         }
     }
 

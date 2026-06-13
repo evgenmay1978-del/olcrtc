@@ -31,6 +31,13 @@ private class FakePaymentApi(
     override suspend fun markPaid(login: String) { paidCalled = true }
     override suspend fun status(login: String) = statusValue
     override suspend fun config(login: String) = configValue
+    var renewCalled = false
+    var resetCalled = false
+    override suspend fun renew(login: String, tariffId: String): SignupResponse {
+        renewCalled = true
+        return SignupResponse(login = login, payInfo = "pay +7", message = "renew")
+    }
+    override suspend fun resetDevices(login: String) { resetCalled = true }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

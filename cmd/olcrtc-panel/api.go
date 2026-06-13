@@ -224,14 +224,15 @@ func (s *server) handleAPIRenew(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusNotFound, "login not found, sign up first")
 		return
 	}
-	if !s.notifyClaim(r.Context(), "♻️ Заявка на продление", login, contact) {
-		writeJSON(w, http.StatusOK, map[string]any{
-			statusKey: "pending",
-			"warning": "operator notification failed; they can still see the request in the panel",
-		})
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{statusKey: "pending"})
+	// Mirror signup: return the pay instructions; the operator is notified when
+	// the client taps "I paid" (handleAPIPaid), keeping one notification path.
+	writeJSON(w, http.StatusOK, map[string]any{
+		loginKey:  login,
+		"tariff":  tariff,
+		"payInfo": s.payInfo,
+		"message": fmt.Sprintf("Переведите %d₽ для продления и нажмите «Я оплатил». Логин: %s",
+			tariff.PriceRUB, login),
+	})
 }
 
 // resetRequest is the body the app posts to /api/reset-devices.

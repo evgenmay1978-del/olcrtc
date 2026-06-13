@@ -65,6 +65,14 @@ class AndroidVpnManager(private val context: Context) : VpnManager {
     val dynamicThemeEnabled: StateFlow<Boolean> = _dynamicThemeEnabled.asStateFlow()
     val installedApps: StateFlow<List<AndroidInstalledApp>> = _installedApps.asStateFlow()
 
+    /**
+     * This device's stable hardware id, sent as x-hwid so the panel can bind the
+     * device under the per-account cap. It is the same id the VPN tunnel presents
+     * as its device_id, so the panel binding and the server's connect-time check
+     * agree on which devices are authorized.
+     */
+    suspend fun deviceHwid(): String = deviceIdentityProvider.hwid()
+
     init {
         scope.launch {
             ensureProxySettings()

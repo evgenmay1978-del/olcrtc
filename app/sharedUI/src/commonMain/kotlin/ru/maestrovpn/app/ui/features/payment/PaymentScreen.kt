@@ -37,6 +37,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -190,15 +193,118 @@ private fun PanelUrlPrompt(
 
 @Composable
 private fun ChooseTariffSection(state: PaymentState, viewModel: PaymentViewModel) {
+    val isRenew = !state.knownLogin.isNullOrBlank()
+
     Text(
-        text = "Выберите тариф",
+        text = if (isRenew) "Продление подписки" else "Выберите тариф",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold
     )
+
+    if (isRenew) {
+        AccountCard(state, viewModel)
+    }
+    if (state.deviceLimitReached) {
+        DeviceLimitBanner(state, viewModel)
+    }
+
+    if (!isRenew) {
+        OutlinedTextField(
+            value = state.login,
+            onValueChange = viewModel::onLoginChanged,
+            label = { Text("Логин (придумайте имя)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
+    if (state.loading && state.tariffs.isEmpty()) {
+        CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+    }
+
+    Text(
+        text = if (isRenew) "Выберите срок продления:" else "Тарифы:",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    state.tariffs.forEach { tariff ->
+        TariffCard(
+            tariff = tariff,
+            enabled = !state.loading,
+            onClick = { viewModel.purchase(tariff) }
+        )
+    }
+
+    TransferByLogin(state, viewModel)
+}
+
+@Composable
+private fun AccountCard(state: PaymentState, viewModel: PaymentViewModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text("Аккаунт: ${state.knownLogin}", fontWeight = FontWeight.SemiBold)
+            if (state.expires.isNotBlank()) {
+                Text("Действует до: ${state.expires}", style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+                "Устройств: ${state.devices}/${state.deviceLimit}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(onClick = { viewModel.resetDevices() }, enabled = !state.loading) {
+                Text("Сбросить устройства")
+            }
+            state.info?.let {
+                Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeviceLimitBanner(state: PaymentState, viewModel: PaymentViewModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                "Достигнут лимит устройств (${state.deviceLimit}). Сбросьте устройства, чтобы подключить это.",
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(onClick = { viewModel.resetDevices() }, enabled = !state.loading) {
+                Text("Сбросить устройства")
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransferByLogin(state: PaymentState, viewModel: PaymentViewModel) {
+    var loginInput by remember { mutableStateOf("") }
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        "Перенести подписку с другого устройства (ТВ/телефон):",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
     OutlinedTextField(
-        value = state.login,
-        onValueChange = viewModel::onLoginChanged,
-        label = { Text("Логин (придумайте имя)") },
+        value = loginInput,
+        onValueChange = { loginInput = it },
+        label = { Text("Логин с другого устройства") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
@@ -206,17 +312,12 @@ private fun ChooseTariffSection(state: PaymentState, viewModel: PaymentViewModel
         ),
         modifier = Modifier.fillMaxWidth()
     )
-
-    if (state.loading && state.tariffs.isEmpty()) {
-        CircularProgressIndicator(modifier = Modifier.padding(8.dp))
-    }
-
-    state.tariffs.forEach { tariff ->
-        TariffCard(
-            tariff = tariff,
-            enabled = !state.loading,
-            onClick = { viewModel.signup(tariff) }
-        )
+    OutlinedButton(
+        onClick = { viewModel.activateByLogin(loginInput) },
+        enabled = !state.loading && loginInput.isNotBlank(),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Подключить это устройство")
     }
 }
 

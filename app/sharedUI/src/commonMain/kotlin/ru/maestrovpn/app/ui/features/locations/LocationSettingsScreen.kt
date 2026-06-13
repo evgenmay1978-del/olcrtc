@@ -77,12 +77,12 @@ fun LocationSettingsTopBar(
     onShare: () -> Unit
 ) {
     TopAppBar(
-        title = { Text("Location settings") },
+        title = { Text("Настройки локации") },
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = "Назад"
                 )
             }
         },
@@ -97,7 +97,7 @@ fun LocationSettingsTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Share,
-                    contentDescription = "Share location"
+                    contentDescription = "Поделиться локацией"
                 )
             }
         }
@@ -171,8 +171,8 @@ fun LocationSettingsScreen(
                 SettingsTextField(
                     value = name,
                     onValueChange = viewModel::onNameChanged,
-                    label = "Name",
-                    placeholder = "Location name",
+                    label = "Название",
+                    placeholder = "Название локации",
                     enabled = !isSaving,
                     isError = viewModel.nameError != null,
                     supportingText = viewModel.nameError,
@@ -246,8 +246,8 @@ fun LocationSettingsScreen(
                 SettingsTextField(
                     value = config.key,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Encryption key",
-                    placeholder = "64 hex characters",
+                    label = "Ключ шифрования",
+                    placeholder = "64 hex-символа",
                     enabled = !isSaving,
                     isError = viewModel.keyError != null,
                     supportingText = viewModel.keyError,
@@ -262,8 +262,8 @@ fun LocationSettingsScreen(
                 SettingsTextField(
                     value = config.token,
                     onValueChange = viewModel::onTokenChanged,
-                    label = "Access token (optional)",
-                    placeholder = "leave empty for open servers",
+                    label = "Токен доступа (необязательно)",
+                    placeholder = "оставьте пустым для открытых серверов",
                     enabled = !isSaving,
                     isError = false,
                     supportingText = null,
@@ -322,7 +322,7 @@ private fun ConnectionTypePicker(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        SectionTitle(title = "Connection type")
+        SectionTitle(title = "Тип подключения")
 
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier.fillMaxWidth()
@@ -371,7 +371,7 @@ private fun ProviderPicker(
         .filterNot { it == LocationConfig.PROVIDER_JITSI }
 
     SettingsDropdown(
-        label = "Service",
+        label = "Сервис",
         selectedValue = selected,
         options = options,
         enabled = enabled,
@@ -392,7 +392,7 @@ private fun TransportPicker(
     val options = LocationConfig.supportedTransportsForProvider(provider)
 
     SettingsDropdown(
-        label = "Transport",
+        label = "Транспорт",
         selectedValue = selected,
         options = options,
         enabled = enabled,
@@ -471,8 +471,8 @@ private fun Vp8OptionsCard(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         SectionTitle(
-            title = "VP8 options",
-            subtitle = "Fine-tune stream performance"
+            title = "Параметры VP8",
+            subtitle = "Тонкая настройка производительности потока"
         )
 
         Row(
@@ -488,7 +488,7 @@ private fun Vp8OptionsCard(
             )
             NumericTextField(
                 value = batch,
-                label = "Batch",
+                label = "Пакет",
                 enabled = enabled,
                 onValueChange = onBatchChanged,
                 modifier = Modifier.weight(1f)
@@ -529,7 +529,7 @@ private fun SettingsTextField(
         trailingIcon = {
             if (value.isNotEmpty() && enabled) {
                 IconButton(onClick = onClear) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                    Icon(Icons.Default.Close, contentDescription = "Очистить")
                 }
             }
         }
@@ -579,7 +579,7 @@ private fun ActionsBar(
                 shape = CircleShape,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
-                Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                Icon(Icons.Outlined.Delete, contentDescription = "Удалить")
             }
 
             Spacer(modifier = Modifier.width(14.dp))
@@ -602,7 +602,7 @@ private fun ActionsBar(
             } else {
                 Icon(Icons.Rounded.Check, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Save", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Сохранить", fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -611,15 +611,15 @@ private fun ActionsBar(
 private fun roomIdPlaceholder(provider: String): String {
     return when (LocationConfig.normalizeProvider(provider)) {
         LocationConfig.PROVIDER_TELEMOST -> "12345678901234"
-        LocationConfig.PROVIDER_JAZZ -> "room id or any"
+        LocationConfig.PROVIDER_JAZZ -> "ID комнаты или любой"
         LocationConfig.PROVIDER_WB_STREAM -> "123e4567-e89b-12d3-a456-426614174000"
         LocationConfig.PROVIDER_JITSI -> "https://meet.example.com/room"
-        else -> "room id"
+        else -> "ID комнаты"
     }
 }
 
 private fun roomIdLabel(provider: String): String {
-    return if (isJitsiProvider(provider)) "Room URL" else "Room ID"
+    return if (isJitsiProvider(provider)) "URL комнаты" else "ID комнаты"
 }
 
 private fun roomKeyboardType(provider: String): KeyboardType {
@@ -631,6 +631,6 @@ private fun isJitsiProvider(provider: String): Boolean {
 }
 
 private enum class ConnectionType(val label: String) {
-    Service("Service"),
+    Service("Сервис"),
     Jitsi("Jitsi")
 }

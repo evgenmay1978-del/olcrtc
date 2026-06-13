@@ -87,7 +87,7 @@ fun StartButton(
         ) {
             Icon(
                 imageVector = Icons.Rounded.PowerSettingsNew,
-                contentDescription = "Start Icon",
+                contentDescription = "Иконка запуска",
                 tint = contentColor.copy(alpha = if (isLoading || !enabled) 0.5f else 1f),
                 modifier = Modifier.size(48.dp)
             )
@@ -98,7 +98,7 @@ fun StartButton(
                 text = label ?: when {
                     isLoading -> "СТОП"
                     isActive -> "СТОП"
-                    requiresSetup -> "SETUP"
+                    requiresSetup -> "НАСТРОИТЬ"
                     else -> "ПУСК"
                 },
                 color = contentColor.copy(alpha = if (!enabled) 0.7f else 1f),

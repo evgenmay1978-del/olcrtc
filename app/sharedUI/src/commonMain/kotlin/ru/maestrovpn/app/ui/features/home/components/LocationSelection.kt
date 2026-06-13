@@ -196,7 +196,7 @@ private fun RelaySetupCard(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "Add relay setup",
+            text = "Добавить подключение",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
@@ -205,15 +205,15 @@ private fun RelaySetupCard(
 
         SetupActionRow(
             title = "Купить подписку",
-            subtitle = "Scan QR, paste URI, or import file",
+            subtitle = "Сканируйте QR, вставьте URI или импортируйте файл",
             icon = Icons.Outlined.QrCodeScanner,
             prominent = true,
             onClick = onAddSubscriptionClick
         )
 
         SetupActionRow(
-            title = "Create custom location",
-            subtitle = "Enter room, key, provider, and transport",
+            title = "Создать свой сервер",
+            subtitle = "Укажите комнату, ключ, провайдера и транспорт",
             icon = Icons.Outlined.Add,
             onClick = onAddLocationClick
         )
@@ -321,7 +321,7 @@ private fun SubscriptionGroupHeader(
     modifier: Modifier = Modifier
 ) {
     val first = locations.firstOrNull()
-    val title = first?.subscriptionTitle().orEmpty().ifBlank { "Subscriptions" }
+    val title = first?.subscriptionTitle().orEmpty().ifBlank { "Подписки" }
     val details = first?.subscriptionDetails()
 
     Column(modifier = modifier.padding(start = 4.dp, top = 2.dp)) {
@@ -424,7 +424,7 @@ private fun LocationItem.subscriptionTitle(): String {
 
     return listOfNotNull(
         subscription?.icon?.takeIf { it.isNotBlank() },
-        subscription?.name?.takeIf { it.isNotBlank() } ?: "Subscriptions"
+        subscription?.name?.takeIf { it.isNotBlank() } ?: "Подписки"
     ).joinToString(" ")
 }
 
@@ -433,15 +433,15 @@ private fun LocationItem.subscriptionDetails(): String? {
 
     return listOfNotNull(
         quotaText(subscription.used, subscription.available),
-        subscription.refresh?.takeIf { it.isNotBlank() }?.let { "Refresh $it" }
+        subscription.refresh?.takeIf { it.isNotBlank() }?.let { "Обновление $it" }
     ).joinToString(" · ").takeIf { it.isNotBlank() }
 }
 
 private fun quotaText(used: String?, available: String?): String? {
     return when {
-        !used.isNullOrBlank() && !available.isNullOrBlank() -> "$used used · $available available"
-        !used.isNullOrBlank() -> "$used used"
-        !available.isNullOrBlank() -> "$available available"
+        !used.isNullOrBlank() && !available.isNullOrBlank() -> "Использовано $used · Доступно $available"
+        !used.isNullOrBlank() -> "Использовано $used"
+        !available.isNullOrBlank() -> "Доступно $available"
         else -> null
     }
 }

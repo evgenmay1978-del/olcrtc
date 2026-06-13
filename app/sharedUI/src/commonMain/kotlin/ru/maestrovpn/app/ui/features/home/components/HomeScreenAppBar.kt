@@ -50,7 +50,7 @@ fun HomeScreenAppBar(
                 IconButton(onClick = onAppSettingsClick) {
                     Icon(
                         imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Application settings",
+                        contentDescription = "Настройки приложения",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -58,7 +58,7 @@ fun HomeScreenAppBar(
                 IconButton(onClick = onHistoryClick) {
                     Icon(
                         imageVector = Icons.Outlined.History,
-                        contentDescription = "History",
+                        contentDescription = "История",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -69,7 +69,7 @@ fun HomeScreenAppBar(
                 IconButton(onClick = onSplitTunnelingClick) {
                     Icon(
                         imageVector = Icons.Outlined.Shield,
-                        contentDescription = "Split tunneling",
+                        contentDescription = "Раздельное туннелирование",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -77,7 +77,7 @@ fun HomeScreenAppBar(
             IconButton(onClick = onAddClick) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
-                    contentDescription = "Add configuration",
+                    contentDescription = "Добавить конфигурацию",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }

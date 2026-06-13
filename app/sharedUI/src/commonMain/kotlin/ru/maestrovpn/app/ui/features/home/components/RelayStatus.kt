@@ -60,12 +60,12 @@ fun RelayStatus(
     }
     val title = when {
         isActive -> "ЗАЩИТА АКТИВНА"
-        requiresSetup -> "Relay Inactive"
-        else -> "Relay Inactive"
+        requiresSetup -> "Реле неактивно"
+        else -> "Реле неактивно"
     }
     val subtitle = when {
         isActive -> "Подключено"
-        requiresSetup -> "No location selected"
+        requiresSetup -> "Локация не выбрана"
         else -> "Отключено"
     }
 
@@ -92,13 +92,13 @@ fun RelayStatus(
                         Icon(
                             tint = iconContentColor,
                             imageVector = Icons.Rounded.VerifiedUser,
-                            contentDescription = "Active"
+                            contentDescription = "Активно"
                         )
                     } else {
                         Icon(
                             tint = iconContentColor,
                             imageVector = Icons.Outlined.Shield,
-                            contentDescription = "Inactive"
+                            contentDescription = "Неактивно"
                         )
                     }
                 }

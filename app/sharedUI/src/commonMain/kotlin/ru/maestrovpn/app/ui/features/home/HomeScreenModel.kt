@@ -34,7 +34,7 @@ class HomeScreenViewModel(
             configData = LocationConfig(),
             shouldShowConfigInvalidReminder = false,
             canStartVpn = false,
-            startBlockedReason = "Add a location first"
+            startBlockedReason = "Сначала добавьте локацию"
         )
     )
     val state get() = _state.asStateFlow()
@@ -83,7 +83,7 @@ class HomeScreenViewModel(
                     selectedLocation = null,
                     configData = LocationConfig(),
                     canStartVpn = false,
-                    startBlockedReason = "Add a location first"
+                    startBlockedReason = "Сначала добавьте локацию"
                 )
             }
             return
@@ -103,7 +103,7 @@ class HomeScreenViewModel(
                 configData = normalized,
                 selectedLocation = locationItem,
                 canStartVpn = normalized.isComplete(),
-                startBlockedReason = if (normalized.isComplete()) null else "Complete active location first"
+                startBlockedReason = if (normalized.isComplete()) null else "Сначала завершите настройку активной локации"
             )
         }
     }
@@ -149,7 +149,7 @@ class HomeScreenViewModel(
                             it.copy(
                                 isVpnLoading = false,
                                 canStartVpn = false,
-                                startBlockedReason = "Add a valid location first"
+                                startBlockedReason = "Сначала добавьте корректную локацию"
                             )
                         }
                         return@launch
@@ -197,15 +197,15 @@ class HomeScreenViewModel(
             logExporter.writeLogs(target, content)
                 .onSuccess { savedPath ->
                     onSaved(
-                        if (savedPath.isBlank() || savedPath == "Logs saved") {
-                            "Logs saved"
+                        if (savedPath.isBlank() || savedPath == "Логи сохранены") {
+                            "Логи сохранены"
                         } else {
-                            "Logs saved to $savedPath"
+                            "Логи сохранены в $savedPath"
                         }
                     )
                 }
                 .onFailure { error ->
-                    onError(error.message ?: "Failed to save logs")
+                    onError(error.message ?: "Не удалось сохранить логи")
                 }
         }
     }
@@ -218,7 +218,7 @@ class HomeScreenViewModel(
             val content = buildLogsExport(logs.value)
             logExporter.shareLogs(content)
                 .onSuccess { message -> onShared(message) }
-                .onFailure { error -> onError(error.message ?: "Failed to share logs") }
+                .onFailure { error -> onError(error.message ?: "Не удалось поделиться логами") }
         }
     }
 
@@ -228,7 +228,7 @@ class HomeScreenViewModel(
     ) {
         configImporter.getFromClipboard()?.let { text ->
             onImportFullConfig(text, onComplete, onError)
-        } ?: onError("No clipboard data found")
+        } ?: onError("В буфере обмена нет данных")
     }
 
     fun onFileSelected(
@@ -239,7 +239,7 @@ class HomeScreenViewModel(
         viewModelScope.launch {
             val text = configImporter.readTextFromSource(fileSource)
             if (text == null) {
-                onError("Could not read config file")
+                onError("Не удалось прочитать файл конфигурации")
             } else {
                 onImportFullConfig(text, onComplete, onError)
             }
@@ -252,7 +252,7 @@ class HomeScreenViewModel(
         onError: (String) -> Unit = {}
     ) {
         if (rawText.isBlank()) {
-            onError("No config text found")
+            onError("Текст конфигурации не найден")
             return
         }
         viewModelScope.launch {
@@ -264,13 +264,13 @@ class HomeScreenViewModel(
                     )
                 }
                 if (!imported) {
-                    onError("No valid MaestroVPN config found")
+                    onError("Действующая конфигурация MaestroVPN не найдена")
                     return@launch
                 }
                 loadCurrentConfigNow()
                 onComplete()
             } catch (e: Exception) {
-                val message = e.message ?: "Import failed"
+                val message = e.message ?: "Не удалось импортировать"
                 _state.update {
                     it.copy(
                         canStartVpn = false,

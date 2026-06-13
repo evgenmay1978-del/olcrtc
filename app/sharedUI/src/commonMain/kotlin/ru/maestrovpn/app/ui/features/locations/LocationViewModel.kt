@@ -488,29 +488,29 @@ class LocationViewModel(
 
     private fun validateName(name: String) {
         nameError = when {
-            name.isBlank() -> "Name cannot be empty"
-            name.length > 30 -> "Name is too long (max 30 chars)"
+            name.isBlank() -> "Название не может быть пустым"
+            name.length > 30 -> "Название слишком длинное (максимум 30 символов)"
             else -> null
         }
     }
 
     private fun validateServer(server: String) {
         val roomLabel = if (editingConfig.bypassProvider == LocationConfig.PROVIDER_JITSI) {
-            "Room URL"
+            "URL комнаты"
         } else {
-            "Room ID"
+            "ID комнаты"
         }
         serverError = when {
-            server.isBlank() -> "$roomLabel cannot be empty"
-            server.length > 256 -> "$roomLabel is too long"
+            server.isBlank() -> "$roomLabel не может быть пустым"
+            server.length > 256 -> "$roomLabel слишком длинный"
             else -> null
         }
     }
 
     private fun validateKey(key: String) {
         keyError = when {
-            key.isBlank() -> "Key cannot be empty"
-            !key.matches(Regex("^[a-fA-F0-9]{64}$")) -> "Key must be 64 hex characters"
+            key.isBlank() -> "Ключ не может быть пустым"
+            !key.matches(Regex("^[a-fA-F0-9]{64}$")) -> "Ключ должен состоять из 64 шестнадцатеричных символов"
             else -> null
         }
     }

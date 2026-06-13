@@ -334,18 +334,18 @@ private fun AppSettingsHubContent(
     ) {
         SettingsSheetHeader(
             icon = Icons.Outlined.Settings,
-            title = "Application Settings",
+            title = "Настройки приложения",
             subtitle = selectedMode.shortLabel()
         )
 
         Spacer(Modifier.height(8.dp))
 
         SettingsSwitchRow(
-            title = "Dynamic Theme",
+            title = "Динамическая тема",
             value = if (dynamicThemeEnabled) {
-                "Using Android system colors"
+                "Используются системные цвета Android"
             } else {
-                "Using MaestroVPN colors"
+                "Используются цвета MaestroVPN"
             },
             icon = Icons.Outlined.Palette,
             checked = dynamicThemeEnabled,
@@ -362,15 +362,15 @@ private fun AppSettingsHubContent(
         )
 
         SettingsNavigationRow(
-            title = "Connection Settings",
-            value = "Mode, SOCKS5 proxy, and app routing",
+            title = "Настройки подключения",
+            value = "Режим, SOCKS5-прокси и маршрутизация приложений",
             icon = selectedMode.icon(),
             enabled = enabled,
             onClick = onConnectionSettingsClick
         )
 
         SettingsNavigationRow(
-            title = "Subscriptions & Sharing",
+            title = "Подписки и обмен",
             value = subscriptionsCount.subscriptionSummary(),
             icon = Icons.Outlined.Share,
             enabled = true,
@@ -378,16 +378,16 @@ private fun AppSettingsHubContent(
         )
 
         SettingsNavigationRow(
-            title = "Update Settings",
-            value = "Nightly · every ${updateSettings.intervalHours}h",
+            title = "Настройки обновлений",
+            value = "Ночные сборки · каждые ${updateSettings.intervalHours} ч",
             icon = Icons.Outlined.Refresh,
             enabled = true,
             onClick = onUpdatesClick
         )
 
         SettingsNavigationRow(
-            title = "Application Logs",
-            value = "Diagnostics and export",
+            title = "Журнал приложения",
+            value = "Диагностика и экспорт",
             icon = Icons.Outlined.History,
             enabled = true,
             onClick = onApplicationLogsClick
@@ -426,7 +426,7 @@ private fun ConnectionSettingsContent(
             .padding(top = 16.dp, bottom = 32.dp)
     ) {
         SettingsDetailHeader(
-            title = "Connection Settings",
+            title = "Настройки подключения",
             subtitle = selectedMode.settingsSummary(),
             onBack = onBack
         )
@@ -435,21 +435,21 @@ private fun ConnectionSettingsContent(
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsNavigationRow(
-                title = "Connection Mode",
+                title = "Режим подключения",
                 value = selectedMode.settingsSummary(),
                 icon = selectedMode.icon(),
                 enabled = enabled,
                 onClick = onConnectionModeClick
             )
             SettingsNavigationRow(
-                title = "SOCKS5 Proxy",
+                title = "SOCKS5-прокси",
                 value = "${proxySettings.host}:${proxySettings.port}",
                 icon = Icons.Rounded.Public,
                 enabled = enabled,
                 onClick = onProxySettingsClick
             )
             SettingsNavigationRow(
-                title = "Split Tunneling",
+                title = "Раздельное туннелирование",
                 value = splitTunnelSettings.settingsSummary(),
                 icon = Icons.Outlined.Apps,
                 enabled = enabled,
@@ -475,7 +475,7 @@ private fun ConnectionModeSettingsContent(
             .padding(bottom = 32.dp)
     ) {
         SettingsDetailHeader(
-            title = "Connection Mode",
+            title = "Режим подключения",
             subtitle = selectedMode.subtitle(),
             onBack = onBack
         )
@@ -530,7 +530,7 @@ private fun SocksProxySettingsContent(
             .padding(bottom = 32.dp)
     ) {
         SettingsDetailHeader(
-            title = "SOCKS5 Proxy",
+            title = "SOCKS5-прокси",
             subtitle = proxySettings.host,
             onBack = onBack
         )
@@ -592,7 +592,7 @@ private fun SplitTunnelingSettingsContent(
             .padding(bottom = 32.dp)
     ) {
         SettingsDetailHeader(
-            title = "Split Tunneling",
+            title = "Раздельное туннелирование",
             subtitle = settings.mode.statusTitle(settings),
             onBack = onBack
         )
@@ -607,7 +607,7 @@ private fun SplitTunnelingSettingsContent(
 
         Spacer(Modifier.height(18.dp))
 
-        SettingsSectionLabel("Routing Behavior")
+        SettingsSectionLabel("Поведение маршрутизации")
 
         Spacer(Modifier.height(8.dp))
 
@@ -628,7 +628,7 @@ private fun SplitTunnelingSettingsContent(
         when (settings.mode) {
             AndroidSplitTunnelMode.AllApps -> SplitTunnelNoListCard()
             AndroidSplitTunnelMode.ProxySelected -> SplitTunnelAppListAction(
-                title = "Apps Using MaestroVPN",
+                title = "Приложения через MaestroVPN",
                 value = settings.proxyPackages.activeListValue(requireSelection = true),
                 icon = Icons.Outlined.Shield,
                 enabled = enabled,
@@ -636,7 +636,7 @@ private fun SplitTunnelingSettingsContent(
             )
 
             AndroidSplitTunnelMode.BypassSelected -> SplitTunnelAppListAction(
-                title = "Bypassed Apps",
+                title = "Исключённые приложения",
                 value = settings.bypassPackages.activeListValue(requireSelection = false),
                 icon = Icons.Outlined.Apps,
                 enabled = enabled,
@@ -753,11 +753,11 @@ private fun SplitTunnelingAppListContent(
 
     fun showSystemAppsValue(): String {
         return if (systemAppsCount == 0) {
-            "No system apps found"
+            "Системные приложения не найдены"
         } else if (showSystemApps) {
-            "${appCount(systemAppsCount)} included"
+            "${appCount(systemAppsCount)} показано"
         } else {
-            "${appCount(systemAppsCount)} hidden by default"
+            "${appCount(systemAppsCount)} скрыто по умолчанию"
         }
     }
 
@@ -812,7 +812,7 @@ private fun SplitTunnelingAppListContent(
                     contentDescription = null
                 )
             },
-            label = { Text("Search apps") },
+            label = { Text("Поиск приложений") },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
         )
 
@@ -820,7 +820,7 @@ private fun SplitTunnelingAppListContent(
             Spacer(Modifier.height(10.dp))
 
             SettingsSwitchRow(
-                title = "Show system apps",
+                title = "Показывать системные приложения",
                 value = showSystemAppsValue(),
                 icon = Icons.Outlined.Settings,
                 checked = showSystemApps,
@@ -879,11 +879,11 @@ private fun SplitTunnelingAppListContent(
 
         if (filteredApps.isEmpty()) {
             EmptyAppsState(
-                title = if (installedApps.isEmpty()) "No apps found" else "No matching apps",
+                title = if (installedApps.isEmpty()) "Приложения не найдены" else "Совпадений нет",
                 subtitle = if (installedApps.isEmpty()) {
-                    "Install launchable apps to configure routing rules."
+                    "Установите запускаемые приложения, чтобы настроить правила маршрутизации."
                 } else {
-                    "Try another app name or package."
+                    "Попробуйте другое название или имя пакета."
                 }
             )
         } else {
@@ -980,8 +980,8 @@ private fun ApplicationLogsSettingsContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SettingsDetailHeader(
-                title = "Application Logs",
-                subtitle = if (logs.isEmpty()) "No entries" else "${logs.size} entries",
+                title = "Журнал приложения",
+                subtitle = if (logs.isEmpty()) "Нет записей" else "Записей: ${logs.size}",
                 onBack = onBack,
                 modifier = Modifier.weight(1f)
             )
@@ -990,13 +990,13 @@ private fun ApplicationLogsSettingsContent(
                 enabled = logs.isNotEmpty(),
                 onClick = onSaveClick
             ) {
-                Text("Save")
+                Text("Сохранить")
             }
             TextButton(
                 enabled = logs.isNotEmpty(),
                 onClick = onShareClick
             ) {
-                Text("Share")
+                Text("Поделиться")
             }
         }
 
@@ -1038,21 +1038,21 @@ private fun UpdatesSettingsContent(
             .padding(top = 16.dp, bottom = 12.dp)
     ) {
         SettingsDetailHeader(
-            title = "Updates",
-            subtitle = "Current version ${CurrentAppInfo.value.version}",
+            title = "Обновления",
+            subtitle = "Текущая версия ${CurrentAppInfo.value.version}",
             onBack = onBack
         )
 
         Spacer(Modifier.height(18.dp))
 
-        SettingsSectionLabel("Check Interval")
+        SettingsSectionLabel("Интервал проверки")
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AppUpdateSettings.INTERVAL_PRESETS.forEach { hours ->
                 FilterChip(
                     selected = settings.intervalHours == hours,
                     onClick = { onIntervalSelected(hours) },
-                    label = { Text("${hours}h") }
+                    label = { Text("${hours} ч") }
                 )
             }
         }
@@ -1070,13 +1070,13 @@ private fun UpdatesSettingsContent(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Last check",
+                    text = "Последняя проверка",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = settings.lastCheckAtEpochMs?.formatDateTime() ?: "Not checked yet",
+                    text = settings.lastCheckAtEpochMs?.formatDateTime() ?: "Ещё не проверялось",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1104,7 +1104,7 @@ private fun UpdatesSettingsContent(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            Text("Check now")
+            Text("Проверить")
         }
     }
 }
@@ -1125,7 +1125,7 @@ private fun SubscriptionsSharingSettingsContent(
             .padding(top = 16.dp, bottom = 12.dp)
     ) {
         SettingsDetailHeader(
-            title = "Subscriptions & Sharing",
+            title = "Подписки и обмен",
             subtitle = subscriptions.size.subscriptionSummary(),
             onBack = onBack
         )
@@ -1139,23 +1139,23 @@ private fun SubscriptionsSharingSettingsContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            SettingsSectionLabel("Current Config")
+            SettingsSectionLabel("Текущая конфигурация")
 
             SettingsNavigationRow(
-                title = "Copy Full Config",
-                value = "Backup all locations to clipboard",
+                title = "Копировать всю конфигурацию",
+                value = "Скопировать все локации в буфер обмена",
                 icon = Icons.Outlined.ContentPaste,
                 enabled = true,
                 showChevron = false,
                 onClick = onCopyConfigClick
             )
 
-            SettingsSectionLabel("Subscriptions")
+            SettingsSectionLabel("Подписки")
 
             if (subscriptions.isEmpty()) {
                 EmptyAppsState(
-                    title = "No subscriptions",
-                    subtitle = "Imported HTTPS subscriptions will appear here."
+                    title = "Нет подписок",
+                    subtitle = "Импортированные HTTPS-подписки появятся здесь."
                 )
             } else {
                 subscriptions.forEach { item ->
@@ -1216,10 +1216,10 @@ private fun SubscriptionShareRow(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onShareClick) {
-                    Text("QR/share")
+                    Text("QR/поделиться")
                 }
                 TextButton(onClick = onRefreshClick) {
-                    Text("Refresh")
+                    Text("Обновить")
                 }
             }
         }
@@ -1405,7 +1405,7 @@ private fun SettingsDetailHeader(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = "Назад"
                 )
             }
         }
@@ -1759,7 +1759,7 @@ private fun SplitTunnelNoListCard() {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "No app list needed",
+                    text = "Список приложений не нужен",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -1767,7 +1767,7 @@ private fun SplitTunnelNoListCard() {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Every app follows the same TUN route",
+                    text = "Все приложения идут по одному маршруту TUN",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     maxLines = 1,
@@ -1786,7 +1786,7 @@ private fun SplitTunnelAppListAction(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    SettingsSectionLabel("App List")
+    SettingsSectionLabel("Список приложений")
 
     Spacer(Modifier.height(8.dp))
 
@@ -1826,20 +1826,20 @@ private fun SocksProxySettingsForm(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SettingsSectionLabel("Endpoint")
+            SettingsSectionLabel("Адрес и порт")
 
             SocksProxyTextField(
                 value = host,
                 onValueChange = onHostChanged,
-                label = "Listen address",
+                label = "Адрес прослушивания",
                 placeholder = AndroidSocksProxySettings.DEFAULT_HOST,
                 enabled = enabled,
                 isError = !hostValid,
                 leadingIcon = Icons.Rounded.Public,
                 supportingText = when {
-                    !hostValid -> "Listen address is required"
-                    hostChanged && isConnectionActive -> "Saving restarts the active connection"
-                    hostChanged -> "Unsaved change"
+                    !hostValid -> "Укажите адрес прослушивания"
+                    hostChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                    hostChanged -> "Несохранённые изменения"
                     else -> null
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
@@ -1848,16 +1848,16 @@ private fun SocksProxySettingsForm(
             SocksProxyTextField(
                 value = port,
                 onValueChange = onPortChanged,
-                label = "Port",
+                label = "Порт",
                 placeholder = AndroidSocksProxySettings.DEFAULT_PORT.toString(),
                 enabled = enabled,
                 isError = port.isBlank() || !portValid,
                 leadingIcon = Icons.Rounded.Public,
                 supportingText = when {
-                    port.isBlank() -> "Port is required"
-                    !portValid -> "Use ${AndroidSocksProxySettings.MIN_PORT}-${AndroidSocksProxySettings.MAX_PORT}"
-                    portChanged && isConnectionActive -> "Saving restarts the active connection"
-                    portChanged -> "Unsaved change"
+                    port.isBlank() -> "Укажите порт"
+                    !portValid -> "Используйте ${AndroidSocksProxySettings.MIN_PORT}-${AndroidSocksProxySettings.MAX_PORT}"
+                    portChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                    portChanged -> "Несохранённые изменения"
                     else -> null
                 },
                 keyboardOptions = KeyboardOptions(
@@ -1868,20 +1868,20 @@ private fun SocksProxySettingsForm(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SettingsSectionLabel("Credentials")
+            SettingsSectionLabel("Учётные данные")
 
             SocksProxyTextField(
                 value = username,
                 onValueChange = onUsernameChanged,
-                label = "Username",
+                label = "Имя пользователя",
                 placeholder = "maestrovpn...",
                 enabled = enabled,
                 isError = username.isBlank(),
                 leadingIcon = Icons.Rounded.Person,
                 supportingText = when {
-                    username.isBlank() -> "Username is required"
-                    usernameChanged && isConnectionActive -> "Saving restarts the active connection"
-                    usernameChanged -> "Unsaved change"
+                    username.isBlank() -> "Укажите имя пользователя"
+                    usernameChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                    usernameChanged -> "Несохранённые изменения"
                     else -> null
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
@@ -1890,15 +1890,15 @@ private fun SocksProxySettingsForm(
             SocksProxyTextField(
                 value = password,
                 onValueChange = onPasswordChanged,
-                label = "Password",
-                placeholder = "Generated password",
+                label = "Пароль",
+                placeholder = "Сгенерированный пароль",
                 enabled = enabled,
                 isError = password.isBlank(),
                 leadingIcon = Icons.Rounded.Key,
                 supportingText = when {
-                    password.isBlank() -> "Password is required"
-                    passwordChanged && isConnectionActive -> "Saving restarts the active connection"
-                    passwordChanged -> "Unsaved change"
+                    password.isBlank() -> "Укажите пароль"
+                    passwordChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                    passwordChanged -> "Несохранённые изменения"
                     else -> null
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
@@ -1914,7 +1914,7 @@ private fun SocksProxySettingsForm(
                 enabled = enabled,
                 onClick = onRegeneratePassword
             ) {
-                Text("Regenerate password")
+                Text("Сменить пароль")
             }
 
             Spacer(Modifier.width(8.dp))
@@ -1925,7 +1925,7 @@ private fun SocksProxySettingsForm(
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Save")
+                Text("Сохранить")
             }
         }
     }
@@ -1975,7 +1975,7 @@ private fun RussianBypassPresetChips(
             enabled = enabled,
             onClick = onClick,
             label = {
-                Text(if (active) "RU bypass on" else "Bypass RU apps")
+                Text(if (active) "Исключение РФ вкл." else "Исключить РФ-приложения")
             },
             leadingIcon = {
                 Icon(
@@ -2221,25 +2221,25 @@ private fun AppSettingsInitialRoute.toRoute(): AppSettingsRoute {
 private fun AndroidConnectionMode.label(): String {
     return when (this) {
         AndroidConnectionMode.Tun -> "TUN"
-        AndroidConnectionMode.Proxy -> "Proxy"
+        AndroidConnectionMode.Proxy -> "Прокси"
     }
 }
 
 private fun Int.subscriptionSummary(): String {
     return when (this) {
-        0 -> "No HTTPS subscriptions"
-        1 -> "1 HTTPS subscription"
-        else -> "$this HTTPS subscriptions"
+        0 -> "Нет HTTPS-подписок"
+        1 -> "1 HTTPS-подписка"
+        else -> "HTTPS-подписок: $this"
     }
 }
 
 private fun SubscriptionShareItem.subscriptionSummary(): String {
-    val interval = updateIntervalHours?.let { "every ${it}h" } ?: "default interval"
+    val interval = updateIntervalHours?.let { "каждые ${it} ч" } ?: "интервал по умолчанию"
     val count = when (locationCount) {
-        1 -> "1 location"
-        else -> "$locationCount locations"
+        1 -> "1 локация"
+        else -> "локаций: $locationCount"
     }
-    val refresh = lastRefreshAtEpochMs?.let { "last refresh ${it.formatDateTime()}" } ?: "not refreshed yet"
+    val refresh = lastRefreshAtEpochMs?.let { "последнее обновление ${it.formatDateTime()}" } ?: "ещё не обновлялось"
     return "$interval · $count · $refresh"
 }
 
@@ -2256,22 +2256,22 @@ private fun AndroidConnectionMode.shortLabel(): String {
 
 private fun AndroidConnectionMode.subtitle(): String {
     return when (this) {
-        AndroidConnectionMode.Tun -> "Full tunnel"
-        AndroidConnectionMode.Proxy -> "Local SOCKS5 proxy"
+        AndroidConnectionMode.Tun -> "Полный туннель"
+        AndroidConnectionMode.Proxy -> "Локальный SOCKS5-прокси"
     }
 }
 
 private fun AndroidConnectionMode.settingsSummary(): String {
     return when (this) {
-        AndroidConnectionMode.Tun -> "TUN · Full tunnel"
-        AndroidConnectionMode.Proxy -> "Proxy · Local SOCKS5"
+        AndroidConnectionMode.Tun -> "TUN · Полный туннель"
+        AndroidConnectionMode.Proxy -> "Прокси · Локальный SOCKS5"
     }
 }
 
 private fun AndroidConnectionMode.description(): String {
     return when (this) {
-        AndroidConnectionMode.Tun -> "System VPN interface"
-        AndroidConnectionMode.Proxy -> "Local SOCKS endpoint"
+        AndroidConnectionMode.Tun -> "Системный VPN-интерфейс"
+        AndroidConnectionMode.Proxy -> "Локальная точка SOCKS"
     }
 }
 
@@ -2282,17 +2282,17 @@ private fun AndroidConnectionMode.icon() = when (this) {
 
 private fun AndroidSplitTunnelSettings.settingsSummary(): String {
     return when (mode) {
-        AndroidSplitTunnelMode.AllApps -> "All apps"
+        AndroidSplitTunnelMode.AllApps -> "Все приложения"
         AndroidSplitTunnelMode.ProxySelected -> if (proxyPackages.isEmpty()) {
-            "Selected apps only"
+            "Только выбранные приложения"
         } else {
-            "Only ${appCount(proxyPackages.size)}"
+            "Только ${appCount(proxyPackages.size)}"
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (bypassPackages.isEmpty()) {
-            "Bypass selected apps"
+            "Исключить выбранные приложения"
         } else {
-            "${appCount(bypassPackages.size)} bypassed"
+            "${appCount(bypassPackages.size)} исключено"
         }
     }
 }
@@ -2322,26 +2322,26 @@ private fun AndroidSplitTunnelMode.subtitle(settings: AndroidSplitTunnelSettings
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (settings.bypassPackages.isEmpty()) {
-            "Choose apps that bypass MaestroVPN"
+            "Выберите приложения в обход MaestroVPN"
         } else {
-            "${appCount(settings.bypassPackages.size)} bypass MaestroVPN"
+            "${appCount(settings.bypassPackages.size)} в обход MaestroVPN"
         }
     }
 }
 
 private fun AndroidSplitTunnelMode.statusTitle(settings: AndroidSplitTunnelSettings): String {
     return when (this) {
-        AndroidSplitTunnelMode.AllApps -> "All apps use MaestroVPN"
+        AndroidSplitTunnelMode.AllApps -> "Все приложения через MaestroVPN"
         AndroidSplitTunnelMode.ProxySelected -> if (settings.proxyPackages.isEmpty()) {
-            "No apps selected"
+            "Приложения не выбраны"
         } else {
-            "Only ${appCount(settings.proxyPackages.size)} use MaestroVPN"
+            "Через MaestroVPN: только ${appCount(settings.proxyPackages.size)}"
         }
 
         AndroidSplitTunnelMode.BypassSelected -> if (settings.bypassPackages.isEmpty()) {
-            "No apps bypass MaestroVPN"
+            "Нет приложений в обход MaestroVPN"
         } else {
-            "${appCount(settings.bypassPackages.size)} bypass MaestroVPN"
+            "${appCount(settings.bypassPackages.size)} в обход MaestroVPN"
         }
     }
 }
@@ -2354,15 +2354,15 @@ private fun AndroidSplitTunnelMode.icon() = when (this) {
 
 private fun AndroidSplitTunnelList.title(): String {
     return when (this) {
-        AndroidSplitTunnelList.Proxy -> "Apps Using MaestroVPN"
-        AndroidSplitTunnelList.Bypass -> "Bypassed Apps"
+        AndroidSplitTunnelList.Proxy -> "Приложения через MaestroVPN"
+        AndroidSplitTunnelList.Bypass -> "Исключённые приложения"
     }
 }
 
 private fun AndroidSplitTunnelList.selectionSubtitle(count: Int): String {
     return when (this) {
-        AndroidSplitTunnelList.Proxy -> "${appCount(count)} use MaestroVPN"
-        AndroidSplitTunnelList.Bypass -> "${appCount(count)} bypassed"
+        AndroidSplitTunnelList.Proxy -> "${appCount(count)} через MaestroVPN"
+        AndroidSplitTunnelList.Bypass -> "${appCount(count)} исключено"
     }
 }
 
@@ -2372,12 +2372,12 @@ private fun Set<String>.russianBypassPresetValue(
     presetActive: Boolean
 ): String {
     return when {
-        isEmpty() -> "No matching installed apps"
-        !presetActive -> "${appCount(size)} matched by package"
-        selectedMatchedCount == 0 -> "No RU apps selected"
-        autoCount == 0 -> "${appCount(selectedMatchedCount)} already selected"
-        autoCount == selectedMatchedCount -> "${appCount(autoCount)} auto-bypassed"
-        else -> "$autoCount auto · ${selectedMatchedCount - autoCount} manual"
+        isEmpty() -> "Нет подходящих установленных приложений"
+        !presetActive -> "${appCount(size)} совпало по пакету"
+        selectedMatchedCount == 0 -> "РФ-приложения не выбраны"
+        autoCount == 0 -> "${appCount(selectedMatchedCount)} уже выбрано"
+        autoCount == selectedMatchedCount -> "${appCount(autoCount)} исключено автоматически"
+        else -> "$autoCount авто · ${selectedMatchedCount - autoCount} вручную"
     }
 }
 
@@ -2387,8 +2387,8 @@ private fun String.matchesRussianBypassPackage(): Boolean =
 private fun Set<String>.activeListValue(requireSelection: Boolean): String {
     return when {
         isNotEmpty() -> appCount(size)
-        requireSelection -> "Required"
-        else -> "No bypassed apps"
+        requireSelection -> "Обязательно"
+        else -> "Нет исключённых приложений"
     }
 }
 
@@ -2397,9 +2397,9 @@ private fun splitTunnelStatusSubtitle(
     isConnectionActive: Boolean
 ): String {
     return when {
-        selectedMode == AndroidConnectionMode.Proxy -> "Saved for TUN mode"
-        isConnectionActive -> "Applies when settings closes"
-        else -> "TUN mode routing rule"
+        selectedMode == AndroidConnectionMode.Proxy -> "Сохранено для режима TUN"
+        isConnectionActive -> "Применится при закрытии настроек"
+        else -> "Правило маршрутизации режима TUN"
     }
 }
 
@@ -2415,7 +2415,15 @@ private fun String.initials(): String {
 }
 
 private fun appCount(count: Int): String {
-    return if (count == 1) "1 app" else "$count apps"
+    val mod100 = count % 100
+    val mod10 = count % 10
+    val word = when {
+        mod100 in 11..14 -> "приложений"
+        mod10 == 1 -> "приложение"
+        mod10 in 2..4 -> "приложения"
+        else -> "приложений"
+    }
+    return "$count $word"
 }
 
 private data class AndroidAppListEntry(

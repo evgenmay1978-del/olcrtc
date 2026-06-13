@@ -46,7 +46,7 @@ class AndroidUpdateInstaller(
         return runCatching {
             if (!canRequestPackageInstalls()) {
                 openUnknownSourcesSettings().getOrThrow()
-                return@runCatching "Allow MaestroVPN to install updates, then tap Download again"
+                return@runCatching "Разрешите MaestroVPN устанавливать обновления и снова нажмите Скачать"
             }
 
             val file = download(asset, onProgress).getOrThrow()
@@ -63,7 +63,7 @@ class AndroidUpdateInstaller(
                     }
                 )
             }
-            "Installing ${asset.name}"
+            "Установка ${asset.name}"
         }
     }
 

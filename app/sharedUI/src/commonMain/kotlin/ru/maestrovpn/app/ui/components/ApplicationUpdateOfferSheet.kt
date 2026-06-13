@@ -50,7 +50,7 @@ fun ApplicationUpdateOfferSheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Update available",
+                    text = "Доступно обновление",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -78,7 +78,7 @@ fun ApplicationUpdateOfferSheet(
                         fontSize = 15.sp
                     )
                     Text(
-                        text = info.asset.sizeBytes?.formatBytes() ?: "Size unknown",
+                        text = info.asset.sizeBytes?.formatBytes() ?: "Размер неизвестен",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
@@ -98,14 +98,14 @@ fun ApplicationUpdateOfferSheet(
                     modifier = Modifier.weight(1f),
                     enabled = downloadProgress == null
                 ) {
-                    Text("Later")
+                    Text("Позже")
                 }
                 Button(
                     onClick = onDownload,
                     modifier = Modifier.weight(1f),
                     enabled = downloadProgress == null
                 ) {
-                    Text("Download")
+                    Text("Скачать")
                 }
             }
         }

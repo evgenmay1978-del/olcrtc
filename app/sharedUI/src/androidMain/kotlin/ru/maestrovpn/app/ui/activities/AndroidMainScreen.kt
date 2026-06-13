@@ -186,20 +186,20 @@ fun AndroidMainScreen(
     fun showUpdateResult(info: AppUpdateInfo) {
         if (info.isDownloaded(updateSettings)) {
             updateOffer = null
-            updateStatusText = "Latest ${info.channel.name.lowercase()} is already downloaded"
+            updateStatusText = "Последняя версия (${info.channel.name.lowercase()}) уже загружена"
         } else if (info.isUpdateAvailable) {
             updateOffer = info
-            updateStatusText = "${info.channel.name} update available: ${info.version}"
+            updateStatusText = "Доступно обновление ${info.channel.name}: ${info.version}"
         } else {
             updateOffer = null
-            updateStatusText = "MaestroVPN is up to date"
+            updateStatusText = "Установлена последняя версия MaestroVPN"
         }
     }
 
     fun checkUpdate(manual: Boolean) {
         val service = appUpdateService
         if (service == null) {
-            updateStatusText = "Update service unavailable"
+            updateStatusText = "Служба обновлений недоступна"
             return
         }
         scope.launch {
@@ -207,7 +207,7 @@ fun AndroidMainScreen(
             val checkStartedAt = kotlin.time.Clock.System.now().toEpochMilliseconds()
             if (!manual && !previousSettings.isUpdateCheckDue(checkStartedAt)) return@launch
 
-            updateStatusText = "Checking ${previousSettings.channel.name.lowercase()}..."
+            updateStatusText = "Проверка (${previousSettings.channel.name.lowercase()})..."
             val result = service.check(
                 previousSettings.channel,
                 vpnManager.subscriptionFetchProxy()
@@ -225,7 +225,7 @@ fun AndroidMainScreen(
                     }
                 },
                 onFailure = { error ->
-                    updateStatusText = error.message ?: "Update check failed"
+                    updateStatusText = error.message ?: "Не удалось проверить обновления"
                 }
             )
         }
@@ -235,23 +235,23 @@ fun AndroidMainScreen(
         scope.launch {
             if (!updateInstaller.canRequestPackageInstalls()) {
                 updateInstaller.openUnknownSourcesSettings()
-                updateStatusText = "Allow MaestroVPN to install updates, then tap Download again"
+                updateStatusText = "Разрешите MaestroVPN устанавливать обновления и снова нажмите Скачать"
                 Toast.makeText(context, updateStatusText, Toast.LENGTH_LONG).show()
                 return@launch
             }
 
             updateDownloadProgress = 0f
-            updateStatusText = "Downloading ${info.asset.name}..."
+            updateStatusText = "Загрузка ${info.asset.name}..."
             val result = updateInstaller.download(info.asset) { progress ->
                 updateDownloadProgress = progress
             }
             val file = result.getOrElse { error ->
-                updateStatusText = "Download failed: ${error.message ?: "unknown error"}"
+                updateStatusText = "Ошибка загрузки: ${error.message ?: "неизвестная ошибка"}"
                 updateDownloadProgress = null
                 Toast.makeText(context, updateStatusText, Toast.LENGTH_LONG).show()
                 return@launch
             }
-            updateStatusText = "Installing ${info.asset.name}"
+            updateStatusText = "Установка ${info.asset.name}"
             saveUpdateSettings(
                 updateSettings.copy(
                     lastSeenUpdateVersion = info.identity(),
@@ -326,7 +326,7 @@ fun AndroidMainScreen(
 
         viewModel.onImportFullConfig(rawText) {
             reloadLocationsAfterImport {
-                Toast.makeText(context, "QR imported", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "QR импортирован", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -394,7 +394,7 @@ fun AndroidMainScreen(
             viewModel.onCopyFullConfigClicked()
         },
         onShareLocationRequested = { config ->
-            shareSheetPayload = "Location QR" to ConfigShareService.olcRtcUri(config)
+            shareSheetPayload = "QR локации" to ConfigShareService.olcRtcUri(config)
         },
         onSaveLogsRequested = { onSaved, onError ->
             pendingLogSaveCallbacks.value = onSaved to onError
@@ -481,7 +481,7 @@ fun AndroidMainScreen(
             },
             onCopyConfigClick = {
                 viewModel.onCopyFullConfigClicked()
-                Toast.makeText(context, "Config copied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Конфигурация скопирована", Toast.LENGTH_SHORT).show()
             },
             onSaveLogsClick = {
                 val showToast: (String) -> Unit = { message ->
@@ -505,7 +505,7 @@ fun AndroidMainScreen(
                 checkUpdate(manual = true)
             },
             onSubscriptionShareClick = { url ->
-                shareSheetPayload = "Subscription QR" to ConfigShareService.subscriptionQrText(url)
+                shareSheetPayload = "QR подписки" to ConfigShareService.subscriptionQrText(url)
             },
             onSubscriptionRefreshClick = { url ->
                 viewModel.refreshSubscription(url) { updatedCount ->
@@ -513,7 +513,7 @@ fun AndroidMainScreen(
                         viewModel.restartVpnIfRunning()
                         Toast.makeText(
                             context,
-                            if (updatedCount > 0) "Subscription updated" else "Subscription not updated",
+                            if (updatedCount > 0) "Подписка обновлена" else "Подписка не обновлена",
                             Toast.LENGTH_SHORT
                         ).show()
                     }

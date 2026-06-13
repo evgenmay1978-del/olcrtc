@@ -13,7 +13,7 @@ class AndroidLogExporter(private val context: Context) : LogExporter {
             context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
                 output.write(content.toByteArray(Charsets.UTF_8))
             } ?: error("Cannot open selected file")
-            "Logs saved"
+            "Логи сохранены"
         }
     }
 
@@ -21,14 +21,14 @@ class AndroidLogExporter(private val context: Context) : LogExporter {
         return runCatching {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "MaestroVPN logs")
+                putExtra(Intent.EXTRA_SUBJECT, "Логи MaestroVPN")
                 putExtra(Intent.EXTRA_TEXT, content)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = Intent.createChooser(intent, "Share MaestroVPN logs")
+            val chooser = Intent.createChooser(intent, "Поделиться логами MaestroVPN")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
-            "Logs share sheet opened"
+            "Окно отправки логов открыто"
         }
     }
 }

@@ -171,7 +171,7 @@ class MaestroVpnVpnService : VpnService() {
                     updateUnderlyingNetwork(null)
                     unbindProcessFromNetwork()
                     setStatus(VpnStatus.Reconnecting)
-                    updateNotification("Waiting for network...")
+                    updateNotification("Ожидание сети…")
                     addLog("Waiting for upstream network")
                 }
             }
@@ -277,9 +277,9 @@ class MaestroVpnVpnService : VpnService() {
         }
         startForeground(
             if (connectionMode == AndroidConnectionMode.Proxy) {
-                "Starting proxy..."
+                "Запуск прокси…"
             } else {
-                "Protecting your connection"
+                "Защищаем ваше соединение"
             }
         )
         startTunnel(isMigration = false, isRestart = isRestart)
@@ -437,8 +437,8 @@ class MaestroVpnVpnService : VpnService() {
                     val active = repository.getActiveLocation()
                     val location = active?.location?.normalized()
                     if (location == null || !location.isComplete()) {
-                        setStatus(VpnStatus.Error("No active location"))
-                        updateNotification("Add a location first")
+                        setStatus(VpnStatus.Error("Нет активной локации"))
+                        updateNotification("Сначала добавьте локацию")
                         stopTransportProcesses(closeTun = true, waitForSocksPort = false)
                         return@withLock
                     }
@@ -459,12 +459,12 @@ class MaestroVpnVpnService : VpnService() {
 
     private suspend fun reconnectTransport(location: LocationConfig, requestedGeneration: Long) {
         setStatus(VpnStatus.Reconnecting)
-        updateNotification("Reconnecting...")
+        updateNotification("Переподключение…")
         val upstream = findActiveUpstreamNetwork()
         if (upstream == null) {
             updateUnderlyingNetwork(null)
             unbindProcessFromNetwork()
-            updateNotification("Waiting for network...")
+            updateNotification("Ожидание сети…")
             addLog("No upstream network; keeping tunnel alive")
             scheduleTransportRetry(requestedGeneration, "no upstream network", NETWORK_RETRY_BASE_DELAY_MS)
             return
@@ -484,7 +484,7 @@ class MaestroVpnVpnService : VpnService() {
         } else {
             updateUnderlyingNetwork(null)
             setStatus(VpnStatus.Reconnecting)
-            updateNotification("Waiting for transport...")
+            updateNotification("Ожидание транспорта…")
             scheduleTransportRetry(requestedGeneration, "transport reconnect failed")
         }
     }
@@ -507,7 +507,7 @@ class MaestroVpnVpnService : VpnService() {
             unbindProcessFromNetwork()
             addLog("No upstream network")
             setStatus(VpnStatus.Reconnecting)
-            updateNotification("Waiting for network...")
+            updateNotification("Ожидание сети…")
             if (isMigration) {
                 scheduleTransportRetry(requestedGeneration, "no upstream network", NETWORK_RETRY_BASE_DELAY_MS)
             }
@@ -519,7 +519,7 @@ class MaestroVpnVpnService : VpnService() {
             if (isMigration) {
                 updateUnderlyingNetwork(null)
                 setStatus(VpnStatus.Reconnecting)
-                updateNotification("Waiting for transport...")
+                updateNotification("Ожидание транспорта…")
                 scheduleTransportRetry(requestedGeneration, "transport start failed")
             }
             return
@@ -624,7 +624,7 @@ class MaestroVpnVpnService : VpnService() {
             throw e
         } catch (e: Exception) {
             val staleRequest = requestedGeneration != generation
-            val message = e.message ?: "Transport failed"
+            val message = e.message ?: "Ошибка транспорта"
             if (staleRequest) {
                 addLog("olcRTC start canceled: $message")
             } else {
@@ -634,7 +634,7 @@ class MaestroVpnVpnService : VpnService() {
             stopMobileAndWait()
             if (!staleRequest && setErrorOnFailure) {
                 setStatus(VpnStatus.Error(message))
-                updateNotification("Connection failed")
+                updateNotification("Не удалось подключиться")
             }
             false
         } finally {
@@ -671,8 +671,8 @@ class MaestroVpnVpnService : VpnService() {
         return try {
             if (!ensureNativeLibrariesLoaded()) {
                 addLog("tun2socks native libraries are unavailable")
-                setStatus(VpnStatus.Error("tun2socks native libraries are unavailable"))
-                updateNotification("Tunnel failed")
+                setStatus(VpnStatus.Error("Нативные библиотеки tun2socks недоступны"))
+                updateNotification("Ошибка туннеля")
                 return false
             }
 
@@ -696,8 +696,8 @@ class MaestroVpnVpnService : VpnService() {
             true
         } catch (e: Exception) {
             addLog("tun2socks start failed: ${e.message}")
-            setStatus(VpnStatus.Error(e.message ?: "tun2socks failed"))
-            updateNotification("Tunnel failed")
+            setStatus(VpnStatus.Error(e.message ?: "Ошибка tun2socks"))
+            updateNotification("Ошибка туннеля")
             false
         }
     }
@@ -718,8 +718,8 @@ class MaestroVpnVpnService : VpnService() {
             builder.establish()
         } catch (e: Exception) {
             addLog("VPN establish failed: ${e.message}")
-            setStatus(VpnStatus.Error(e.message ?: "VPN establish failed"))
-            updateNotification("VPN tunnel error")
+            setStatus(VpnStatus.Error(e.message ?: "Не удалось установить VPN"))
+            updateNotification("Ошибка VPN-туннеля")
             null
         }
     }
@@ -739,16 +739,16 @@ class MaestroVpnVpnService : VpnService() {
 
                 if (packages.isEmpty()) {
                     addLog("Split tunneling proxy list is empty")
-                    setStatus(VpnStatus.Error("Select apps for split tunneling"))
-                    updateNotification("Split tunneling error")
+                    setStatus(VpnStatus.Error("Выберите приложения для раздельного туннелирования"))
+                    updateNotification("Ошибка раздельного туннелирования")
                     return false
                 }
 
                 val applied = packages.count { addAllowedApp(builder, it) }
                 if (applied == 0) {
                     addLog("Split tunneling has no valid proxy apps")
-                    setStatus(VpnStatus.Error("Selected apps are unavailable"))
-                    updateNotification("Split tunneling error")
+                    setStatus(VpnStatus.Error("Выбранные приложения недоступны"))
+                    updateNotification("Ошибка раздельного туннелирования")
                     false
                 } else {
                     addLog("Split tunneling: $applied selected apps use TUN")
@@ -1186,7 +1186,7 @@ class MaestroVpnVpnService : VpnService() {
         recoveryJob?.cancel()
         if (setReconnectingImmediately && status is VpnStatus.Connected) {
             setStatus(VpnStatus.Reconnecting)
-            updateNotification("Reconnecting...")
+            updateNotification("Переподключение…")
         }
 
         recoveryJob = scope.launch {
@@ -1200,7 +1200,7 @@ class MaestroVpnVpnService : VpnService() {
             recoveryRequestedForGeneration = recoveryGeneration
             if (setReconnectingImmediately && currentStatus is VpnStatus.Connected) {
                 setStatus(VpnStatus.Reconnecting)
-                updateNotification("Reconnecting...")
+                updateNotification("Переподключение…")
             }
 
             addLog("$reason; reconnecting transport")
@@ -1400,7 +1400,7 @@ class MaestroVpnVpnService : VpnService() {
         return caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
     }
 
-    private fun startForeground(statusText: String = "Protecting your connection") {
+    private fun startForeground(statusText: String = "Защищаем ваше соединение") {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
@@ -1437,7 +1437,7 @@ class MaestroVpnVpnService : VpnService() {
             .setContentIntent(getAppPendingIntent())
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                "Stop",
+                "Стоп",
                 PendingIntent.getService(
                     this,
                     0,
@@ -1464,11 +1464,11 @@ class MaestroVpnVpnService : VpnService() {
     private fun activeModeLabel(): String {
         return when (connectionMode) {
             AndroidConnectionMode.Tun -> "VPN"
-            AndroidConnectionMode.Proxy -> "Proxy"
+            AndroidConnectionMode.Proxy -> "Прокси"
         }
     }
 
-    private fun connectedNotificationText(): String = "${activeModeLabel()} Connected"
+    private fun connectedNotificationText(): String = "${activeModeLabel()} подключено"
 
     private class AuthenticatedSocksProxy(
         private val listenPort: Int,

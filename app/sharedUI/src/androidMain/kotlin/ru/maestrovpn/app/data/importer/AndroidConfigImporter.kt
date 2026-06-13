@@ -15,11 +15,11 @@ class AndroidConfigImporter(private val context: Context) : ConfigImporter {
         if (clip != null && clip.itemCount > 0) {
             val text = clip.getItemAt(0).text?.toString()
             if (text.isNullOrBlank()) {
-                Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Буфер обмена пуст", Toast.LENGTH_SHORT).show()
             }
             return text
         }
-        Toast.makeText(context, "No clipboard data found", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Данные в буфере обмена не найдены", Toast.LENGTH_SHORT).show()
         return null
     }
 
@@ -27,7 +27,7 @@ class AndroidConfigImporter(private val context: Context) : ConfigImporter {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("MaestroVpn Locations", text)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "Config copied to clipboard", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Конфигурация скопирована в буфер обмена", Toast.LENGTH_SHORT).show()
     }
 
     override suspend fun readTextFromSource(source: Any): String? {

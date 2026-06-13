@@ -90,7 +90,7 @@ class QrScannerActivity : ComponentActivity() {
             hasCameraPermission = true
             maybeStartCamera()
         } else {
-            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Доступ к камере запрещён", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
@@ -136,7 +136,7 @@ class QrScannerActivity : ComponentActivity() {
                 val provider = runCatching { cameraProviderFuture.get() }
                     .getOrElse {
                         cameraStarted = false
-                        Toast.makeText(this, "Camera unavailable", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Камера недоступна", Toast.LENGTH_SHORT).show()
                         finish()
                         return@addListener
                     }
@@ -164,7 +164,7 @@ class QrScannerActivity : ComponentActivity() {
                     )
                 }.onFailure {
                     cameraStarted = false
-                    Toast.makeText(this, "Camera unavailable", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Камера недоступна", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             },
@@ -315,12 +315,12 @@ private fun QrScannerTopBar(onClose: () -> Unit) {
         title = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Scan QR",
+                    text = "Сканировать QR",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "subscription or location URI",
+                    text = "URI подписки или локации",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -330,7 +330,7 @@ private fun QrScannerTopBar(onClose: () -> Unit) {
             IconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
-                    contentDescription = "Close scanner",
+                    contentDescription = "Закрыть сканер",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -422,13 +422,13 @@ private fun QrScannerStatusPanel(modifier: Modifier = Modifier) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Ready to scan",
+                        text = "Готово к сканированию",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "Subscription or location URI",
+                        text = "URI подписки или локации",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

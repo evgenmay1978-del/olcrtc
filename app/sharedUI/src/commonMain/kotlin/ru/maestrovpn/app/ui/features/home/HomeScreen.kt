@@ -75,7 +75,7 @@ fun HomeScreen(
     val requiresSetup = !state.canStartVpn && !state.isVpnConnected && !state.isVpnLoading
 
     val primaryActionLabel = when {
-        requiresSetup -> "SETUP"
+        requiresSetup -> "НАСТРОИТЬ"
         state.isVpnLoading || state.isVpnConnected -> "СТОП"
         else -> "ПУСК"
     }
@@ -86,9 +86,9 @@ fun HomeScreen(
                 viewModel.restartVpnIfRunning()
 
                 val message = if (updatedCount > 0) {
-                    "Subscriptions updated: $updatedCount"
+                    "Подписки обновлены: $updatedCount"
                 } else {
-                    "No subscriptions to update"
+                    "Нет подписок для обновления"
                 }
 
                 scope.launch {
@@ -260,7 +260,7 @@ fun HomeScreen(
                     onImportFromClipboardRequested(
                         {
                             scope.launch {
-                                snackbarHostState.showSnackbar("Imported from clipboard")
+                                snackbarHostState.showSnackbar("Импортировано из буфера обмена")
                             }
                         },
                         { message ->

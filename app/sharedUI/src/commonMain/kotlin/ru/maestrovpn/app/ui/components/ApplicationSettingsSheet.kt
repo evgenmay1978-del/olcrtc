@@ -237,36 +237,36 @@ private fun SharedSettingsHubContent(
     ) {
         SharedSettingsHeader(
             icon = Icons.Outlined.Settings,
-            title = "Application Settings",
+            title = "Настройки приложения",
             subtitle = "SOCKS"
         )
 
         Spacer(Modifier.height(8.dp))
 
         SharedNavigationRow(
-            title = "Connection Settings",
-            value = "Mode and SOCKS5 proxy",
+            title = "Настройки подключения",
+            value = "Режим и SOCKS5-прокси",
             icon = Icons.Rounded.Public,
             onClick = onConnectionClick
         )
 
         SharedNavigationRow(
-            title = "Subscriptions & Sharing",
+            title = "Подписки и обмен",
             value = subscriptionsCount.subscriptionSummary(),
             icon = Icons.Outlined.Share,
             onClick = onSubscriptionsClick
         )
 
         SharedNavigationRow(
-            title = "Update Settings",
-            value = "Nightly · every ${updateSettings.intervalHours}h",
+            title = "Настройки обновлений",
+            value = "Nightly · каждые ${updateSettings.intervalHours}ч",
             icon = Icons.Outlined.Refresh,
             onClick = onUpdatesClick
         )
 
         SharedNavigationRow(
-            title = "Application Logs",
-            value = "Diagnostics and export",
+            title = "Журналы приложения",
+            value = "Диагностика и экспорт",
             icon = Icons.Outlined.History,
             onClick = onLogsClick
         )
@@ -302,7 +302,7 @@ private fun SharedConnectionSettingsContent(
             .padding(top = 16.dp, bottom = 32.dp)
     ) {
         SharedDetailHeader(
-            title = "Connection Settings",
+            title = "Настройки подключения",
             subtitle = summary,
             onBack = onBack
         )
@@ -311,15 +311,15 @@ private fun SharedConnectionSettingsContent(
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SharedNavigationRow(
-                title = "Connection Mode",
-                value = "Proxy · Local SOCKS5",
+                title = "Режим подключения",
+                value = "Прокси · Локальный SOCKS5",
                 icon = Icons.Rounded.Public,
                 onClick = onConnectionModeClick
             )
 
             if (socksProxySettings != null) {
                 SharedNavigationRow(
-                    title = "SOCKS5 Proxy",
+                    title = "SOCKS5-прокси",
                     value = "${socksProxySettings.host}:${socksProxySettings.port}",
                     icon = Icons.Rounded.Public,
                     onClick = onSocksProxyClick
@@ -346,8 +346,8 @@ private fun SharedConnectionModeSettingsContent(
             .padding(bottom = 32.dp)
     ) {
         SharedDetailHeader(
-            title = "Connection Mode",
-            subtitle = "Local SOCKS5 proxy",
+            title = "Режим подключения",
+            subtitle = "Локальный SOCKS5-прокси",
             onBack = onBack
         )
 
@@ -356,8 +356,8 @@ private fun SharedConnectionModeSettingsContent(
         SharedSelectableSettingsCard(
             selected = true,
             icon = Icons.Rounded.Public,
-            title = "Proxy",
-            subtitle = "Local SOCKS endpoint"
+            title = "Прокси",
+            subtitle = "Локальная точка SOCKS"
         )
     }
 }
@@ -394,7 +394,7 @@ private fun SharedSocksProxySettingsContent(
             .padding(bottom = 32.dp)
     ) {
         SharedDetailHeader(
-            title = "SOCKS5 Proxy",
+            title = "SOCKS5-прокси",
             subtitle = settings.host,
             onBack = onBack
         )
@@ -406,7 +406,7 @@ private fun SharedSocksProxySettingsContent(
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SharedSectionLabel("Endpoint")
+                SharedSectionLabel("Адрес")
 
                 SharedSocksProxyTextField(
                     value = editedHost,
@@ -416,12 +416,12 @@ private fun SharedSocksProxySettingsContent(
                             .replace("\n", "")
                             .trim()
                     },
-                    label = "Listen address",
+                    label = "Адрес прослушивания",
                     placeholder = "127.0.0.1",
                     enabled = false,
                     isError = !hostValid,
                     leadingIcon = Icons.Rounded.Public,
-                    supportingText = if (!hostValid) "Listen address is required" else null,
+                    supportingText = if (!hostValid) "Укажите адрес прослушивания" else null,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                 )
 
@@ -430,16 +430,16 @@ private fun SharedSocksProxySettingsContent(
                     onValueChange = { value ->
                         editedPort = value.filter { it.isDigit() }.take(5)
                     },
-                    label = "Port",
+                    label = "Порт",
                     placeholder = ApplicationSocksProxySettings.DEFAULT_PORT.toString(),
                     enabled = true,
                     isError = editedPort.isBlank() || !portValid,
                     leadingIcon = Icons.Rounded.Public,
                     supportingText = when {
-                        editedPort.isBlank() -> "Port is required"
-                        !portValid -> "Use ${ApplicationSocksProxySettings.MIN_PORT}-${ApplicationSocksProxySettings.MAX_PORT}"
-                        portChanged && isConnectionActive -> "Saving restarts the active connection"
-                        portChanged -> "Unsaved change"
+                        editedPort.isBlank() -> "Укажите порт"
+                        !portValid -> "Используйте диапазон ${ApplicationSocksProxySettings.MIN_PORT}-${ApplicationSocksProxySettings.MAX_PORT}"
+                        portChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                        portChanged -> "Несохранённые изменения"
                         else -> null
                     },
                     keyboardOptions = KeyboardOptions(
@@ -450,20 +450,20 @@ private fun SharedSocksProxySettingsContent(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SharedSectionLabel("Credentials")
+                SharedSectionLabel("Учётные данные")
 
                 SharedSocksProxyTextField(
                     value = editedUsername,
                     onValueChange = { editedUsername = it.take(ApplicationSocksProxySettings.MAX_CREDENTIAL_LENGTH) },
-                    label = "Username",
+                    label = "Имя пользователя",
                     placeholder = "maestrovpn...",
                     enabled = true,
                     isError = editedUsername.isBlank(),
                     leadingIcon = Icons.Rounded.Person,
                     supportingText = when {
-                        editedUsername.isBlank() -> "Username is required"
-                        usernameChanged && isConnectionActive -> "Saving restarts the active connection"
-                        usernameChanged -> "Unsaved change"
+                        editedUsername.isBlank() -> "Укажите имя пользователя"
+                        usernameChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                        usernameChanged -> "Несохранённые изменения"
                         else -> null
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
@@ -471,15 +471,15 @@ private fun SharedSocksProxySettingsContent(
                 SharedSocksProxyTextField(
                     value = editedPassword,
                     onValueChange = { editedPassword = it.take(ApplicationSocksProxySettings.MAX_CREDENTIAL_LENGTH) },
-                    label = "Password",
-                    placeholder = "Generated password",
+                    label = "Пароль",
+                    placeholder = "Сгенерированный пароль",
                     enabled = true,
                     isError = editedPassword.isBlank(),
                     leadingIcon = Icons.Rounded.Key,
                     supportingText = when {
-                        editedPassword.isBlank() -> "Password is required"
-                        passwordChanged && isConnectionActive -> "Saving restarts the active connection"
-                        passwordChanged -> "Unsaved change"
+                        editedPassword.isBlank() -> "Укажите пароль"
+                        passwordChanged && isConnectionActive -> "Сохранение перезапустит активное подключение"
+                        passwordChanged -> "Несохранённые изменения"
                         else -> null
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
@@ -492,7 +492,7 @@ private fun SharedSocksProxySettingsContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onProxyPasswordRegenerated) {
-                    Text("Regenerate password")
+                    Text("Сменить пароль")
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -507,7 +507,7 @@ private fun SharedSocksProxySettingsContent(
                 ) {
                     Icon(Icons.Rounded.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Save")
+                    Text("Сохранить")
                 }
             }
         }
@@ -560,21 +560,21 @@ private fun SharedUpdatesSettingsContent(
             .padding(top = 16.dp, bottom = 12.dp)
     ) {
         SharedDetailHeader(
-            title = "Updates",
-            subtitle = "Current version ${CurrentAppInfo.value.version}",
+            title = "Обновления",
+            subtitle = "Текущая версия ${CurrentAppInfo.value.version}",
             onBack = onBack
         )
 
         Spacer(Modifier.height(18.dp))
 
-        SharedSectionLabel("Check Interval")
+        SharedSectionLabel("Интервал проверки")
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AppUpdateSettings.INTERVAL_PRESETS.forEach { hours ->
                 FilterChip(
                     selected = settings.intervalHours == hours,
                     onClick = { onIntervalSelected(hours) },
-                    label = { Text("${hours}h") }
+                    label = { Text("${hours}ч") }
                 )
             }
         }
@@ -592,13 +592,13 @@ private fun SharedUpdatesSettingsContent(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "Last check",
+                    text = "Последняя проверка",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = settings.lastCheckAtEpochMs?.formatEpochMs() ?: "Not checked yet",
+                    text = settings.lastCheckAtEpochMs?.formatEpochMs() ?: "Ещё не проверялось",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -626,7 +626,7 @@ private fun SharedUpdatesSettingsContent(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            Text("Check now")
+            Text("Проверить")
         }
     }
 }
@@ -647,7 +647,7 @@ private fun SharedSubscriptionsSettingsContent(
             .padding(top = 16.dp, bottom = 12.dp)
     ) {
         SharedDetailHeader(
-            title = "Subscriptions & Sharing",
+            title = "Подписки и обмен",
             subtitle = subscriptions.size.subscriptionSummary(),
             onBack = onBack
         )
@@ -661,22 +661,22 @@ private fun SharedSubscriptionsSettingsContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            SharedSectionLabel("Current Config")
+            SharedSectionLabel("Текущая конфигурация")
 
             SharedNavigationRow(
-                title = "Copy Full Config",
-                value = "Backup all locations to clipboard",
+                title = "Копировать всю конфигурацию",
+                value = "Сохранить все локации в буфер обмена",
                 icon = Icons.Outlined.ContentPaste,
                 showChevron = false,
                 onClick = onCopyConfigClick
             )
 
-            SharedSectionLabel("Subscriptions")
+            SharedSectionLabel("Подписки")
 
             if (subscriptions.isEmpty()) {
                 SharedEmptyState(
-                    title = "No subscriptions",
-                    subtitle = "Imported HTTPS subscriptions will appear here."
+                    title = "Нет подписок",
+                    subtitle = "Импортированные HTTPS-подписки появятся здесь."
                 )
             } else {
                 subscriptions.forEach { item ->
@@ -707,8 +707,8 @@ private fun SharedLogsSettingsContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SharedDetailHeader(
-                title = "Application Logs",
-                subtitle = if (logs.isEmpty()) "No entries" else "${logs.size} entries",
+                title = "Журналы приложения",
+                subtitle = if (logs.isEmpty()) "Нет записей" else "Записей: ${logs.size}",
                 onBack = onBack,
                 modifier = Modifier.weight(1f)
             )
@@ -717,13 +717,13 @@ private fun SharedLogsSettingsContent(
                 enabled = logs.isNotEmpty(),
                 onClick = onSaveClick
             ) {
-                Text("Save")
+                Text("Сохранить")
             }
             TextButton(
                 enabled = logs.isNotEmpty(),
                 onClick = onShareClick
             ) {
-                Text("Share")
+                Text("Поделиться")
             }
         }
 
@@ -777,10 +777,10 @@ private fun SharedUpdateOfferCard(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onLater) {
-                    Text("Later")
+                    Text("Позже")
                 }
                 Button(onClick = onDownload) {
-                    Text("Download")
+                    Text("Скачать")
                 }
             }
         }
@@ -827,10 +827,10 @@ private fun SharedSubscriptionRow(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onShareClick) {
-                    Text("QR/share")
+                    Text("QR/поделиться")
                 }
                 TextButton(onClick = onRefreshClick) {
-                    Text("Refresh")
+                    Text("Обновить")
                 }
             }
         }
@@ -1069,7 +1069,7 @@ private fun SharedDetailHeader(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = "Назад"
                 )
             }
         }
@@ -1151,19 +1151,19 @@ private enum class SharedSettingsRoute {
 
 private fun Int.subscriptionSummary(): String {
     return when (this) {
-        0 -> "No HTTPS subscriptions"
-        1 -> "1 HTTPS subscription"
-        else -> "$this HTTPS subscriptions"
+        0 -> "Нет HTTPS-подписок"
+        1 -> "1 HTTPS-подписка"
+        else -> "HTTPS-подписок: $this"
     }
 }
 
 private fun SubscriptionShareItem.subscriptionSummary(): String {
-    val interval = updateIntervalHours?.let { "every ${it}h" } ?: "default interval"
+    val interval = updateIntervalHours?.let { "каждые ${it}ч" } ?: "интервал по умолчанию"
     val count = when (locationCount) {
-        1 -> "1 location"
-        else -> "$locationCount locations"
+        1 -> "1 локация"
+        else -> "локаций: $locationCount"
     }
-    val refresh = lastRefreshAtEpochMs?.let { "last refresh ${it.formatEpochMs()}" } ?: "not refreshed yet"
+    val refresh = lastRefreshAtEpochMs?.let { "обновлено ${it.formatEpochMs()}" } ?: "ещё не обновлялось"
     return "$interval · $count · $refresh"
 }
 

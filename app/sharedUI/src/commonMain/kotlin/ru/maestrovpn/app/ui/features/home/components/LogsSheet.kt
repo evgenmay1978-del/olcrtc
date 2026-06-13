@@ -94,7 +94,7 @@ fun LogsContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Application Logs",
+                text = "Логи приложения",
                 style = MaterialTheme.typography.headlineSmall,
             )
 
@@ -103,19 +103,19 @@ fun LogsContent(
                     enabled = logs.isNotEmpty(),
                     onClick = onSaveClick
                 ) {
-                    Text("Save")
+                    Text("Сохранить")
                 }
                 TextButton(
                     enabled = logs.isNotEmpty(),
                     onClick = onShareClick
                 ) {
-                    Text("Share")
+                    Text("Поделиться")
                 }
 
                 IconButton(onClick = onCloseClick) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close logs",
+                        contentDescription = "Закрыть логи",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

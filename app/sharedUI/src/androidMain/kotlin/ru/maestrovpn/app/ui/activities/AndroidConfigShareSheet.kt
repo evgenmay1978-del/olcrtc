@@ -80,7 +80,7 @@ internal fun AndroidConfigShareSheet(
             ) {
                 Image(
                     bitmap = qrBitmap.asImageBitmap(),
-                    contentDescription = "QR code",
+                    contentDescription = "QR-код",
                     modifier = Modifier
                         .size(248.dp)
                         .padding(12.dp),
@@ -108,13 +108,13 @@ internal fun AndroidConfigShareSheet(
                 OutlinedButton(
                     onClick = {
                         context.copySharePayload(payload)
-                        Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Скопировано", Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Outlined.ContentCopy, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
-                    Text("Copy")
+                    Text("Копировать")
                 }
 
                 Button(
@@ -123,7 +123,7 @@ internal fun AndroidConfigShareSheet(
                 ) {
                     Icon(Icons.Outlined.Share, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
-                    Text("Share")
+                    Text("Поделиться")
                 }
             }
         }

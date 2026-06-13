@@ -245,8 +245,17 @@ func (s *Session) publisherTrackDescriptions() []map[string]any {
 	return tracks
 }
 
-func isNonTURNURL(url string) bool {
-	return url != "" && !strings.HasPrefix(url, "turn:") && !strings.HasPrefix(url, "turns:")
+// isValidICEURL reports whether url is a usable ICE server URL. We KEEP TURN
+// (turn:/turns:) as well as STUN: on symmetric-NAT / CGNAT networks (common on
+// mobile) a host/STUN path cannot be established, and the SFU-offered TURN relay
+// is the only way to carry media. These are the provider's own TURN endpoints,
+// so relaying through them keeps traffic on the same trusted host; the short
+// per-session credential is re-issued on every reconnect via applyServerHelloConfig.
+func isValidICEURL(url string) bool {
+	return strings.HasPrefix(url, "stun:") ||
+		strings.HasPrefix(url, "stuns:") ||
+		strings.HasPrefix(url, "turn:") ||
+		strings.HasPrefix(url, "turns:")
 }
 
 func parseICEURLs(server map[string]any) []string {
@@ -254,13 +263,13 @@ func parseICEURLs(server map[string]any) []string {
 	switch rawURLs := server["urls"].(type) {
 	case []any:
 		for _, rawURL := range rawURLs {
-			if url, ok := rawURL.(string); ok && isNonTURNURL(url) {
+			if url, ok := rawURL.(string); ok && isValidICEURL(url) {
 				urls = append(urls, url)
 			}
 		}
 	case []string:
 		for _, url := range rawURLs {
-			if isNonTURNURL(url) {
+			if isValidICEURL(url) {
 				urls = append(urls, url)
 			}
 		}

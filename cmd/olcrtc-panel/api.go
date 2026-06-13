@@ -23,6 +23,9 @@ var errLoginTaken = errors.New("login already exists")
 // statusKey is the JSON field carrying a client's lifecycle state.
 const statusKey = "status"
 
+// loginKey is the JSON field / query param carrying a client's login.
+const loginKey = "login"
+
 // writeJSON serializes v as a JSON response. Marshal errors are surfaced via a
 // 500 so a malformed payload is never silently swallowed.
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -99,7 +102,7 @@ func (s *server) handleAPISignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"login":   login,
+		loginKey:  login,
 		"tariff":  tariff,
 		"payInfo": s.payInfo,
 		"message": fmt.Sprintf("Переведите %d₽ и нажмите «Я оплатил». В переводе укажите логин: %s",
@@ -199,7 +202,7 @@ func (s *server) handleApprove(w http.ResponseWriter, r *http.Request) {
 		}
 		tariff, lErr := billing.Lookup(tariffIDFromContact(c.Contact))
 		if lErr != nil {
-			return lErr
+			return fmt.Errorf("lookup tariff: %w", lErr)
 		}
 		return st.SetStatus(label, access.StatusActive, tariff.TTL())
 	})
@@ -207,7 +210,7 @@ func (s *server) handleApprove(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusActive, "login": label})
+	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusActive, loginKey: label})
 }
 
 // handleReject declines a pending payment: the client gets no access.
@@ -227,7 +230,7 @@ func (s *server) handleReject(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusRejected, "login": label})
+	writeJSON(w, http.StatusOK, map[string]any{statusKey: access.StatusRejected, loginKey: label})
 }
 
 // clientView is the normalized status of one client for the status endpoint.
@@ -266,7 +269,7 @@ func (s *server) lookupView(login string) clientView {
 // handleAPIStatus lets the app poll a login's current state so it can sync:
 // pending / active / rejected / not_found, plus expiry when active.
 func (s *server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
-	login := strings.TrimSpace(r.URL.Query().Get("login"))
+	login := strings.TrimSpace(r.URL.Query().Get(loginKey))
 	if login == "" {
 		apiError(w, http.StatusBadRequest, "login query param required")
 		return
@@ -289,6 +292,10 @@ func (s *server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 // working location: the server-wide room/key/provider/transport plus the
 // client's own access token. It mirrors the fields config.GenerateClientConfig
 // copies from the server config, so the app end always matches the server end.
+// snake_case tags are required: they mirror the app's @SerialName fields and the
+// olcrtc client config keys, so tagliatelle's camelCase rule does not apply here.
+//
+//nolint:tagliatelle
 type connectionConfig struct {
 	Name       string `json:"name"`
 	Provider   string `json:"provider"`
@@ -312,7 +319,7 @@ func (s *server) handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 			"config generation is not enabled on this panel")
 		return
 	}
-	login := strings.TrimSpace(r.URL.Query().Get("login"))
+	login := strings.TrimSpace(r.URL.Query().Get(loginKey))
 	if login == "" {
 		apiError(w, http.StatusBadRequest, "login query param required")
 		return

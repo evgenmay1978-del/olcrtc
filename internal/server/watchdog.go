@@ -45,9 +45,9 @@ func writeHeartbeat(path string) {
 		return
 	}
 	if dir := filepath.Dir(path); dir != "" {
-		_ = os.MkdirAll(dir, 0o755)
+		_ = os.MkdirAll(dir, 0o750)
 	}
-	_ = os.WriteFile(path, []byte(time.Now().UTC().Format(time.RFC3339)), 0o644)
+	_ = os.WriteFile(path, []byte(time.Now().UTC().Format(time.RFC3339)), 0o600)
 }
 
 // runWatchdog refreshes the heartbeat file while healthy and exits the process
@@ -75,6 +75,8 @@ func (s *Server) runWatchdog(ctx context.Context) {
 				"watchdog: no healthy activity for %s - restarting process for a fresh room join",
 				s.wd.age().Round(time.Second),
 			)
+			t.Stop()
+			//nolint:gocritic // intentional hard exit; the process is terminating so deferred cleanup is moot
 			os.Exit(1)
 		}
 	}

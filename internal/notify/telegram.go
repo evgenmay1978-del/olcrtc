@@ -68,6 +68,9 @@ func (t *Telegram) NotifyButtons(ctx context.Context, text string, rows [][]Butt
 	if !t.Enabled() {
 		return nil
 	}
+	// callback_data is Telegram's API field name; tagliatelle's camelCase rule
+	// does not apply to a third-party wire format.
+	//nolint:tagliatelle
 	type tgBtn struct {
 		Text         string `json:"text"`
 		CallbackData string `json:"callback_data"`

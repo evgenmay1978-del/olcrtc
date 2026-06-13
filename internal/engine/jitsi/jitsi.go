@@ -45,11 +45,17 @@ const (
 	// transport in olcrtc already uses 12 KiB chunks, well under this limit.
 	bridgeMaxMessageSize = 16 * 1024
 	bridgeOpenTimeout    = 30 * time.Second
-	defaultNick          = "olcrtc"
-	credentialKeyRoom    = "room"
-	videoTrackName       = "videochannel"
-	maxReconnects        = 5
-	reconnectWindow      = 5 * time.Minute
+	// joinTimeout bounds the MUC/XMPP join. A public Jitsi that briefly drops the
+	// websocket can otherwise leave j.Join blocked on a presence stanza that never
+	// arrives, freezing the whole server out of the room indefinitely (observed:
+	// an 8-hour hang). Bounding it turns a stall into an error the supervisor
+	// retries, so the server keeps trying to rejoin instead of wedging.
+	joinTimeout       = 45 * time.Second
+	defaultNick       = "olcrtc"
+	credentialKeyRoom = "room"
+	videoTrackName    = "videochannel"
+	maxReconnects     = 5
+	reconnectWindow   = 5 * time.Minute
 )
 
 // bridgeMagic tags every EndpointMessage produced by this engine. JVB broadcasts
@@ -75,6 +81,9 @@ var (
 	ErrHostRequired = errors.New("jitsi host required")
 	// ErrRoomRequired is returned when no Jitsi room was supplied.
 	ErrRoomRequired = errors.New("jitsi room required")
+	// ErrJoinStalled is returned when the MUC/XMPP join does not complete within
+	// joinTimeout, so the supervisor reconnects instead of wedging in the join.
+	ErrJoinStalled = errors.New("jitsi join stalled")
 )
 
 // Session is the Jitsi engine handle.
@@ -291,14 +300,43 @@ func (s *Session) Connect(ctx context.Context) error {
 	return nil
 }
 
+// joinWithTimeout runs j.Join but never lets the session loop block for longer
+// than joinTimeout. j.Join keeps the original (long-lived) context, so a
+// successful session stays valid for its lifetime; the timer only bounds how
+// long we wait for the join to complete. If the MUC handshake stalls (a public
+// Jitsi briefly dropping the websocket), we return ErrJoinStalled and let the
+// supervisor reconnect. A stalled j.Join goroutine unblocks when the session
+// context is cancelled on teardown.
+func (s *Session) joinWithTimeout(ctx context.Context) (*j.Session, error) {
+	type joinResult struct {
+		sess *j.Session
+		err  error
+	}
+	ch := make(chan joinResult, 1)
+	go func() {
+		sess, jErr := j.Join(ctx, j.Config{
+			Host:  s.host,
+			Room:  s.room,
+			Nick:  s.name,
+			Debug: logger.IsVerbose(),
+		})
+		ch <- joinResult{sess: sess, err: jErr}
+	}()
+	timer := time.NewTimer(joinTimeout)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-timer.C:
+		return nil, fmt.Errorf("%w after %s", ErrJoinStalled, joinTimeout)
+	case r := <-ch:
+		return r.sess, r.err
+	}
+}
+
 func (s *Session) joinAndOpenBridge(ctx context.Context) (*j.Session, error) { //nolint:cyclop // sequential setup steps
 	logger.Infof("jitsi: joining %s/%s as %s …", s.host, s.room, s.name)
-	jSess, err := j.Join(ctx, j.Config{
-		Host:  s.host,
-		Room:  s.room,
-		Nick:  s.name,
-		Debug: logger.IsVerbose(),
-	})
+	jSess, err := s.joinWithTimeout(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("jitsi join: %w", err)
 	}

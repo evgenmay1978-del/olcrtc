@@ -507,7 +507,7 @@ GR_URL="https://github.com/zarazaex69/gr/releases/latest/download/gr-${OS}-${ARC
 
 if curl -fsSL "$GR_URL" -o "$GR_BIN" 2>/dev/null; then
     chmod +x "$GR_BIN"
-    echo "[*] QR code for your URI (scan with olcbox):"
+    echo "[*] QR code for your URI (scan with maestrovpn):"
     echo ""
     "$GR_BIN" -o -s "$OLC_URI" 2>/dev/null || echo "[!] QR generation failed"
     echo ""

@@ -25,7 +25,7 @@ See all info in [docs](docs/)
 <br>
 Issues? contact us at [@openlibrecommunity](https://t.me/openlibrecommunity) or make an [issue](https://github.com/openlibrecommunity/olcrtc/issues)
 <br>
-Community ui client: [alananisimov/olcbox](https://github.com/alananisimov/olcbox)
+Community ui client: [evgenmay1978-del/olcrtc](https://github.com/evgenmay1978-del/olcrtc)
 
 ## Read docs for start 
 

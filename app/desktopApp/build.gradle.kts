@@ -105,8 +105,12 @@ abstract class VerifyNativeResourcesTask : DefaultTask() {
     }
 }
 
+// In this fork the Compose app lives inside the olcrtc repo (olcrtc/app), so the
+// gradle root project's parent IS the Go repo root. (Upstream kept them as
+// separate sibling repos, hence the old `.resolve("olcrtc")`, which produced a
+// bogus `.../olcrtc/olcrtc` here and broke the Windows build.) OLCRTC_REPO still
+// overrides this when set (the Android CI does so explicitly).
 val defaultOlcRtcRepo = rootProject.layout.projectDirectory.asFile.parentFile
-    .resolve("olcrtc")
     .absolutePath
 val olcrtcRepo = providers.environmentVariable("OLCRTC_REPO")
     .orElse(defaultOlcRtcRepo)

@@ -482,7 +482,7 @@ data: data
 ./build/olcrtc-linux-amd64 client-wbstream.yaml    # SOCKS5 на :8809
 ```
 
-Переключение между инстансами в olcbox - просто выбираешь нужный SOCKS5 порт.
+Переключение между инстансами в maestrovpn - просто выбираешь нужный SOCKS5 порт.
 
 ---
 

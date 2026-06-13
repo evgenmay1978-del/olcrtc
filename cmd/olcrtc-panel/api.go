@@ -150,8 +150,8 @@ func (s *server) handleAPIPaid(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("💳 Заявка на оплату\nЛогин: %s\n%s\nПодтвердите или отклоните кнопкой ниже.",
 			login, contact)
 		buttons := [][]notify.Button{{
-			{Text: "✅ Подтвердить", Data: "olcbox:ap:" + login},
-			{Text: "❌ Отклонить", Data: "olcbox:rj:" + login},
+			{Text: "✅ Подтвердить", Data: "maestrovpn:ap:" + login},
+			{Text: "❌ Отклонить", Data: "maestrovpn:rj:" + login},
 		}}
 		if nErr := s.notifier.NotifyButtons(r.Context(), msg, buttons); nErr != nil {
 			// Notification failure must not lose the claim; log via response.

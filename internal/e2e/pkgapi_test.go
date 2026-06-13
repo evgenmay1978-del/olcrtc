@@ -16,7 +16,7 @@ var errEmbeddedAuth = errors.New("embedded auth rejected")
 // TestEmbeddableServerClientTunnel exercises the public pkg/olcrtc/tunnel API
 // end to end: an embeddable Server and Client, both with cover traffic enabled
 // and the client gated by an access token, tunnel real SOCKS5 traffic over the
-// in-memory carrier. This pins the embeddable surface olcbox-style apps use.
+// in-memory carrier. This pins the embeddable surface maestrovpn-style apps use.
 func TestEmbeddableServerClientTunnel(t *testing.T) {
 	carrierName, room := registerMemoryCarrier(t)
 	echoAddr := startEchoServer(t)

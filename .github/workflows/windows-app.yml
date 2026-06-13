@@ -59,7 +59,9 @@ jobs:
 
       - name: Build portable Windows zip
         working-directory: app
-        run: ./gradlew :desktopApp:packageReleasePortableZip --no-daemon --stacktrace
+        run: |
+          export OLCRTC_REPO="${{ github.workspace }}"
+          ./gradlew :desktopApp:packageReleasePortableZip --no-daemon --stacktrace
 
       - name: Collect artifact
         working-directory: app

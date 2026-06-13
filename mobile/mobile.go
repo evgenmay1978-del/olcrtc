@@ -541,7 +541,7 @@ func singleHTTPPingRequest(
 		return 0, fmt.Errorf("create HTTP ping request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "Olcbox-Android")
+	req.Header.Set("User-Agent", "MaestroVPN-Android")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Cache-Control", "no-cache")
 

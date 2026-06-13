@@ -6,6 +6,6 @@ contact_links:
   - name: Документация
     url: https://github.com/openlibrecommunity/olcrtc/tree/main/docs
     about: Конфигурация, быстрый старт, формат URI, примеры YAML.
-  - name: olcbox (UI клиент)
-    url: https://github.com/alananisimov/olcbox/issues
+  - name: maestrovpn (UI клиент)
+    url: https://github.com/evgenmay1978-del/olcrtc/issues
     about: Баги интерфейса/мобильного клиента сообщай туда, ядро olcrtc их не чинит.

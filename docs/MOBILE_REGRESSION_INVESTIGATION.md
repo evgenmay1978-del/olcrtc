@@ -13,8 +13,8 @@
 - Our repo (this one): `github.com/evgenmay1978-del/olcrtc`. It is a fork of:
   - engine/CLI upstream: `github.com/openlibrecommunity/olcrtc` (our Go module
     path is identical: `github.com/openlibrecommunity/olcrtc`).
-  - Android/Compose app `app/`: fork of `github.com/alananisimov/olcbox` (MIT),
-    namespace `org.olcbox.app`.
+  - Android/Compose app `app/`: fork of `github.com/evgenmay1978-del/olcrtc` (MIT),
+    namespace `ru.maestrovpn.app`.
 - Server: `194.48.141.106`, repo cloned at `/root/olcrtc`, run via
   `docker compose -f docker-compose.server.yml` (env in `.local/.env`). A 3x-ui
   install shares the box (sshd on port 80, xray on 443) — MUST NOT be touched.
@@ -30,7 +30,7 @@
   The phone reaches `meet1.arbitr.ru` (84.201.184.28:443) but NOT
   `51.250.19.85`.
 - **THE CONTRADICTION TO EXPLAIN:** the user reports that with the UPSTREAM
-  client (alananisimov/olcbox + openlibrecommunity/olcrtc) and THIS SAME server,
+  client (evgenmay1978-del/olcrtc + openlibrecommunity/olcrtc) and THIS SAME server,
   the tunnel worked. So this is almost certainly a REGRESSION introduced by our
   fork, not a fundamental impossibility. Treat "instance unusable on mobile" as
   a DISPROVEN hypothesis unless you re-verify it with evidence.
@@ -59,7 +59,7 @@ Investigate the diff between upstream and our fork. Known fork changes:
    concrete list (file:line) of every behavioural difference in: the jitsi
    engine, transport selection, ICE/colibri-ws handling, and the app's default
    transport for Jitsi. `git log`/`git diff` against the fork point, or clone
-   `openlibrecommunity/olcrtc` and `alananisimov/olcbox` and diff.
+   `openlibrecommunity/olcrtc` and `evgenmay1978-del/olcrtc` and diff.
 2. Determine how UPSTREAM establishes the Jitsi data path on mobile — verify:
    read upstream code and state, with file:line, which transport upstream uses
    for Jitsi by default and whether its data path goes over colibri-ws/SCTP
